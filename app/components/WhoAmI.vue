@@ -7,35 +7,38 @@
           <img
             src="/images/profile_picture.webp"
             alt="Minecraft avatar"
-            class="w-48 h-48 md:w-72 md:h-72 object-cover rounded-3xl border-4 border-primary shadow-2xl shadow-primary/30 bg-background transition-transform duration-300 group-hover:scale-105"
+            class="w-48 h-48 md:w-72 md:h-72 object-cover rounded-lg shadow-2xl shadow-primary/30 bg-background transition-transform duration-300 group-hover:scale-105"
           />
           <!-- Fancy ring effect behind avatar -->
-          <span class="absolute inset-0 rounded-3xl ring-4 ring-primary/30 animate-pulse -z-10"></span>
+          <span class="absolute inset-0 rounded-lg ring-4 ring-primary/30 animate-pulse -z-10"></span>
+          <!-- Decorative blurred accent squares -->
+          <span class="pointer-events-none absolute -left-5 -top-5 w-14 h-14 bg-secondary/10 backdrop-blur-[2px] rounded-lg border border-secondary/40"></span>
+          <span class="pointer-events-none absolute -right-5 -bottom-5 w-20 h-20 bg-secondary/10 backdrop-blur-[2px] rounded-lg border border-secondary/40"></span>
         </div>
       </div>
       <!-- Bio text section -->
       <div class="md:col-span-3 flex flex-col items-start">
-        <h1 class="text-3xl md:text-4xl font-extrabold text-primary tracking-wide mb-4">
-          Chi sono
+        <h1 class="text-3xl md:text-4xl font-extrabold tracking-wide mb-4">
+          About <span class="text-primary">leledan06</span>
         </h1>
-        <div class="space-y-5 text-text text-lg leading-relaxed tracking-wide">
+        <div class="space-y-2 text-text text-lg leading-relaxed tracking-wide">
           <p>
-            <span class="font-semibold text-primary">Heyla!</span> Sono lele, un costruttore professionista di Minecraft specializzato in
-            <span class="text-primary font-semibold">creazioni organiche</span>, 
-            <span class="text-primary font-semibold">terraforming avanzato</span> 
-            e <span class="text-primary font-semibold">strutture epiche</span>.
+            <span class="font-semibold text-primary">Heyla!</span> I'm lele, a professional Minecraft builder specialized in
+            <span class="text-primary font-semibold">organic creations</span>,
+            <span class="text-primary font-semibold">advanced terraforming</span>
+            and <span class="text-primary font-semibold">epic structures</span>.
           </p>
           <p>
-            Con anni di esperienza, creo mondi immersivi che fondono 
-            <span class="text-primary font-semibold">realismo naturale</span> 
-            e <span class="text-primary font-semibold">design architettonico</span>.
-            Sul mio 
-            <a href="https://www.youtube.com/@leledan06" target="_blank" rel="noopener" class="underline decoration-primary hover:text-primary font-semibold transition-colors">canale YouTube</a>
-            condivido sia video di building dettagliati che avventure coinvolgenti, portando la community dentro il mio processo creativo.
+            With years of experience, I create immersive worlds that blend
+            <span class="text-primary font-semibold">natural realism</span>
+            with <span class="text-primary font-semibold">architectural design</span>.
+            On my
+            <a href="https://www.youtube.com/@leledan06" target="_blank" rel="noopener" class="underline decoration-primary hover:text-primary font-semibold transition-colors">YouTube channel</a>
+            I share both detailed building videos and engaging adventures, bringing the community into my creative process.
           </p>
-          <p>Da idee a <span class="text-primary font-bold">Sculture Professionali</span>.</p>
+          <p>From ideas to <span class="text-primary font-bold">Professional Sculptures</span>.</p>
           <p>
-            <span class="font-semibold">La mia missione</span> è ispirare ed aiutare altre persone a specializzarsi in questo campo, mostrando le infinite possibilità creative di Minecraft.
+            <span class="font-semibold">My mission</span> is to inspire and help others specialize in this field, showing the endless creative possibilities of Minecraft.
           </p>
         </div>
       </div>

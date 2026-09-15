@@ -11,16 +11,19 @@
 <script setup lang="ts">
 useSeoMeta({
   title: 'leledan06 | Minecraft Builder Portfolio',
-  description: 'Portfolio professionale di leledan06, costruttore Minecraft specializzato in sculture organiche, terraforming e strutture epiche. Scopri servizi, recensioni, galleria lavori e informazioni su come commissionare un progetto.',
+  description: 'leledan06\'s professional portfolio, a Minecraft builder specialized in organic sculptures, terraforming and epic structures. Explore services, reviews, a gallery of past work and how to commission a project.',
   ogTitle: 'leledan06 | Minecraft Builder Portfolio',
-  ogDescription: 'Scopri il talento di leledan06: portfolio di progetti Minecraft, servizi personalizzati, galleria immagini, prezzi trasparenti e testimonianze clienti.',
+  ogDescription: 'Discover leledan06\'s talent: a portfolio of Minecraft projects, custom services, image gallery, transparent pricing and client testimonials.',
   ogType: 'website',
   twitterCard: 'summary_large_image',
   twitterTitle: 'leledan06 | Minecraft Builder',
-  twitterDescription: 'Costruttore Minecraft professionista, esperto in organico, terraforming e architettura. Guarda il portfolio e scopri i miei servizi in Minecraft.',
+  twitterDescription: 'Professional Minecraft builder, expert in organic builds, terraforming and architecture. Browse the portfolio and discover the services offered.',
 })
 
 useHead({
+  htmlAttrs: {
+    lang: 'en'
+  },
   link: [
     { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
     { rel: 'alternate icon', type: 'image/png', href: '/favicon.png' }
@@ -28,7 +31,7 @@ useHead({
   meta: [
     { name: 'author', content: 'Alessandro Maria Calista' },
     { name: 'robots', content: 'index, follow' },
-    { name: 'keywords', content: 'Minecraft, builder, portfolio, servizi, costruttore, organico, terraforming, architettura, sculture, skin, progetti Minecraft' },
+    { name: 'keywords', content: 'Minecraft, builder, portfolio, services, terraforming, architecture, sculptures, skins, Minecraft projects' },
     { property: 'og:url', content: 'https://leledan06.it' }
   ],
   title: 'leledan06 | Minecraft Builder Portfolio'

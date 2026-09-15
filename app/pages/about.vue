@@ -1,9 +1,11 @@
 <template>
   <div class="bg-background ">
     <NavBar class="sticky top-0 z-10 bg-background" />
-    <WhoAmI />  
-    <SkillsBar />
-    <CustomerMarquee />
+    <WhoAmI />
+    <AboutStats />
+    <WhyChooseLele />
+    <BuiltFeaturedOn />
+    <ReviewsMarquee />
   </div>
 </template>
 

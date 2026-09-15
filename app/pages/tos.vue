@@ -3,108 +3,105 @@
     <NavBar class="sticky top-0 z-10 bg-background" />
     <div class="flex items-center justify-center py-6 md:py-10 px-1 md:px-2 mx-5">
       <div class="w-full max-w-5xl mx-auto bg-background-secondary rounded-xl shadow-lg p-6 md:p-10 border-2 border-secondary shadow-lg shadow-secondary">
-        <h1 class="text-2xl md:text-3xl font-extrabold text-primary mb-8 text-center">Termini di Servizio (TOS)</h1>
+        <h1 class="text-2xl md:text-3xl font-extrabold text-primary mb-8 text-center">Terms of Service (TOS)</h1>
         <ol class="space-y-8 text-base md:text-lg">
           <li>
-            <h2 class="font-bold text-primary mb-2 text-xl">1. Impegno</h2>
+            <h2 class="font-bold text-primary mb-2 text-xl">1. Commitment</h2>
             <ul class="space-y-1 list-disc list-inside">
-              <li>Tutte le richieste verranno esaminate e devono essere conformi a questi Termini di Servizio.</li>
-              <li>I lavori vengono selezionati manualmente: l'artista sceglie i progetti su cui vuole lavorare. Alcune richieste possono essere rifiutate senza giustificazione.</li>
-              <li>Una volta accettata, il cliente riceverà una conferma d'ordine e potrà seguire i progressi tramite messaggio diretto.</li>
-              <li>Il cliente deve fornire tutte le informazioni e i riferimenti necessari prima dell'inizio del lavoro (immagini, descrizione, stile desiderato, ecc). Si consiglia di raccogliere tutto in un unico file/cartella (PDF, Google Docs, Drive).</li>
-              <li>Il cliente concede all'artista il diritto non esclusivo di utilizzare i riferimenti solo per l’esecuzione dell’opera e garantisce di disporre di tutti i diritti sugli stessi.</li>
-              <li>L’artista svolge il lavoro in buona fede e con dedizione, garantendo l’originalità. Può usare materiali con licenza commerciale, strumenti educativi o risorse libere da copyright.</li>
-              <li>L’artista si riserva il diritto di rifiutare richieste con contenuti offensivi, illegali, non in linea con lo stile o il tema richiesto.</li>
+              <li>All requests will be reviewed and must comply with these Terms of Service.</li>
+              <li>Projects are hand-picked: the artist chooses which projects to work on. Some requests may be declined without justification.</li>
+              <li>Once accepted, the client will receive an order confirmation and can follow progress via direct message.</li>
+              <li>The client must provide all necessary information and references before work begins (images, description, desired style, etc). It's recommended to gather everything in a single file/folder (PDF, Google Docs, Drive).</li>
+              <li>The client grants the artist a non-exclusive right to use the references solely for the execution of the work and guarantees they hold all rights to them.</li>
+              <li>The artist works in good faith and with dedication, guaranteeing originality. Commercially licensed materials, educational tools or copyright-free resources may be used.</li>
+              <li>The artist reserves the right to decline requests containing offensive or illegal content, or content that does not match the requested style or theme.</li>
             </ul>
           </li>
           <li>
-            <h2 class="font-bold text-primary mb-2 text-xl">2. Scadenze e Processo</h2>
+            <h2 class="font-bold text-primary mb-2 text-xl">2. Deadlines and Process</h2>
             <ul class="space-y-1 list-disc list-inside">
-              <li>Tempo di consegna standard: 2-7 giorni lavorativi (in base a complessità e lista d’attesa).</li>
-              <li>Il cliente riceve una bozza iniziale per l’approvazione prima del pagamento.</li>
-              <li>L’artista invia aggiornamenti volontari; il cliente può richiedere rapporti di avanzamento ma senza interrompere il lavoro quotidianamente.</li>
-              <li>La consegna finale avverrà tramite Discord, Telegram o email in formato <span class="font-mono">.schem</span>. Viene fornita solo la versione finale esportata.</li>
-              <li>Eventuali modifiche alle scadenze verranno comunicate anticipatamente.</li>
+              <li>Standard delivery time: 2-7 business days (depending on complexity and queue length).</li>
+              <li>The client receives an initial draft for approval before payment.</li>
+              <li>The artist provides voluntary updates; the client may request progress reports but not daily interruptions of the work.</li>
+              <li>Final delivery happens via Discord, Telegram or email in <span class="font-mono">.schem</span> format. Only the final exported version is provided.</li>
+              <li>Any changes to deadlines will be communicated in advance.</li>
             </ul>
           </li>
           <li>
-            <h2 class="font-bold text-primary mb-2 text-xl">3. Restrizioni sui Contenuti</h2>
+            <h2 class="font-bold text-primary mb-2 text-xl">3. Content Restrictions</h2>
             <ul class="space-y-1 list-disc list-inside">
-              <li>L’artista non accetta lavori che includano: contenuti sessualmente espliciti, gore estremo, temi offensivi o discriminatori, uso improprio di immagini reali, riproduzione diretta di stili o opere di altri artisti.</li>
+              <li>The artist does not accept work that includes: sexually explicit content, extreme gore, offensive or discriminatory themes, misuse of real images, or direct reproduction of other artists' styles or works.</li>
             </ul>
           </li>
           <li>
-            <h2 class="font-bold text-primary mb-2 text-xl">4. Revisioni e Modifiche</h2>
+            <h2 class="font-bold text-primary mb-2 text-xl">4. Revisions and Changes</h2>
             <ul class="space-y-1 list-disc list-inside">
-              <li>Fino a <span class="font-bold">3 revisioni</span> della bozza incluse senza costi aggiuntivi.</li>
-              <li>Dopo l’approvazione dell’opera finale, solo correzioni <span class="italic">minori</span> (colore, dettagli piccoli) sono gratuite.</li>
-              <li>Modifiche importanti o eccessive possono avere costi extra, comunicati prima dell’esecuzione.</li>
-              <li>Non è consentito alterare o ridisegnare l’opera finale senza permesso dell’artista.</li>
+              <li>Up to <span class="font-bold">3 draft revisions</span> included at no extra cost.</li>
+              <li>After the final work is approved, only <span class="italic">minor</span> corrections (color, small details) are free.</li>
+              <li>Major or excessive changes may incur extra costs, communicated before the work is carried out.</li>
+              <li>The final work may not be altered or redesigned without the artist's permission.</li>
             </ul>
           </li>
           <li>
-            <h2 class="font-bold text-primary mb-2 text-xl">5. Comunicazione</h2>
+            <h2 class="font-bold text-primary mb-2 text-xl">5. Communication</h2>
             <ul class="space-y-1 list-disc list-inside">
-              <li>Comunicazioni solo tramite Discord, Telegram o email.</li>
-              <li>Tempo di risposta dell’artista: fino a 3 giorni lavorativi.</li>
-              <li>In caso di mancata risposta del cliente per più di 7 giorni senza preavviso, il progetto può essere dichiarato abbandonato (senza rimborso).</li>
+              <li>Communication only via Discord, Telegram or email.</li>
+              <li>Artist response time: up to 3 business days.</li>
+              <li>If the client does not respond for more than 7 days without prior notice, the project may be declared abandoned (no refund).</li>
             </ul>
           </li>
           <li>
-            <h2 class="font-bold text-primary mb-2 text-xl">6. Diritti d'Uso</h2>
+            <h2 class="font-bold text-primary mb-2 text-xl">6. Usage Rights</h2>
             <ul class="space-y-1 list-disc list-inside">
-              <li>L’artista mantiene per default tutti i diritti d’autore e pubblicitari; può mostrare l’opera in portfolio/social, salvo richiesta di riservatezza.</li>
-              <li>Il cliente ha diritto all’uso personale (anche a scopo di lucro).</li>
-              <li>Esclusività o cessione dei diritti vanno concordati <span class="italic">prima e in forma scritta</span>.</li>
-              <li><span class="text-warning font-bold">⚠️ L’acquisto non dà diritto al file sorgente né di modifica.</span> Per build viene consegnato <span class="font-mono">.schematic/.schem</span>; per skin <span class="font-mono">.png</span>.</li>
+              <li>By default, the artist retains all copyright and promotional rights; the work may be shown in the portfolio/social media unless confidentiality is requested.</li>
+              <li>The client is entitled to personal use (including for profit).</li>
+              <li>Exclusivity or transfer of rights must be agreed <span class="italic">in advance and in writing</span>.</li>
+              <li><span class="text-warning font-bold">⚠️ Purchase does not grant rights to the source file or to modify it.</span> Builds are delivered as <span class="font-mono">.schematic/.schem</span>; skins as <span class="font-mono">.png</span>.</li>
             </ul>
           </li>
           <li>
-            <h2 class="font-bold text-primary mb-2 text-xl">7. Pagamento</h2>
+            <h2 class="font-bold text-primary mb-2 text-xl">7. Payment</h2>
             <ul class="space-y-1 list-disc list-inside">
-              <li>Pagamenti accettati via <span class="font-mono">PayPal</span> o bonifico bancario.</li>
-              <li>Il pagamento avviene solo dopo l’approvazione della bozza.</li>
-              <li>Ordini non pagati entro 48 ore dall’invio della fattura possono essere annullati.</li>
-              <li>I prezzi sono stabiliti in EUR (valuta europea) e possono variare a seconda della complessità e delle scadenze.</li>
-              <li>I pagamenti si svolgono mandando metà del budget stabilito in acconto prima dell'inizio del servizio e l'altra metà a fine del servizio (la costruzione NON verrà consegnata prima dell'ultimo pagamento).</li>
-              <li>Il cliente non può richiedere un rimborso indebito (chargeback) dopo l'inizio dell'opera.
-              </li>
+              <li>Accepted payment methods: <span class="font-mono">PayPal</span> or bank transfer.</li>
+              <li>Payment is only made after the draft has been approved.</li>
+              <li>Orders unpaid 48 hours after the invoice is sent may be cancelled.</li>
+              <li>Prices are set in EUR and may vary depending on complexity and deadlines.</li>
+              <li>Payment is split into two halves: the first as a deposit before the service begins, and the second at the end of the service (the build will NOT be delivered before the final payment).</li>
+              <li>The client may not request an unjustified refund (chargeback) after work has begun.</li>
             </ul>
-            </li>
+          </li>
 
+          <li>
+            <h2 class="font-bold text-primary mb-2 text-xl">8. Cancellations and Refunds</h2>
+            <ul class="space-y-1 list-disc list-inside">
+              <li>The client may cancel the order <span class="font-bold">before work begins</span> and receive a full refund.</li>
+              <li>If cancellation happens <span class="font-bold">after work has begun</span>, the artist will retain <span class="font-bold">30%</span> of the amount corresponding to the time invested.</li>
+              <li>After the <span class="font-bold">draft has been delivered</span>, <span class="text-warning font-bold">no refund will be issued</span>.</li>
+              <li>If the artist is unable to complete the work due to force majeure, the client will receive a <span class="font-bold">full refund</span>.</li>
+              <li>The artist <span class="font-bold">will not add the client to any public block or ban lists</span>.</li>
+              <li>For a summary of this policy, see the dedicated <NuxtLink to="/refunds" class="underline decoration-primary hover:text-primary font-semibold">Refunds page</NuxtLink>.</li>
+            </ul>
+          </li>
 
+          <li>
+            <h2 class="font-bold text-primary mb-2 text-xl">9. Confidentiality</h2>
+            <ul class="space-y-1 list-disc list-inside">
+              <li>Personal or contact information exchanged between the client and the artist is considered strictly confidential and will not be shared without explicit authorization.</li>
+              <li>The client may request <span class="font-bold">full confidentiality</span> for the work for an additional fee. In this case, the piece will not be published or shown in the artist's portfolio/social media.</li>
+              <li>If full confidentiality is not requested, the artist may publish or showcase the work <span class="font-bold">30 days after delivery</span>, unless otherwise agreed in writing.</li>
+            </ul>
+          </li>
 
-
-<li>
-  <h2 class="font-bold text-primary mb-2 text-xl">8. Cancellazioni e Rimborsi</h2>
-  <ul class="space-y-1 list-disc list-inside">
-    <li>Il cliente può annullare l'ordine <span class="font-bold">prima dell'inizio del lavoro</span> e ricevere un rimborso completo.</li>
-    <li>Se la cancellazione avviene <span class="font-bold">dopo l'inizio del lavoro</span>, l'artista tratterrà il <span class="font-bold">30%</span> dell'importo corrispondente al tempo investito.</li>
-    <li>Dopo la <span class="font-bold">consegna dello schizzo</span>, <span class="text-warning font-bold">non ci sarà alcun rimborso</span>.</li>
-    <li>Se l'artista non è in grado di completare il lavoro a causa di forza maggiore, il cliente riceverà un <span class="font-bold">rimborso completo</span>.</li>
-    <li>L'artista <span class="font-bold">non aggiungerà il cliente a liste pubbliche di blocco o ban</span>.</li>
-  </ul>
-</li>
-
-<li>
-  <h2 class="font-bold text-primary mb-2 text-xl">9. Riservatezza</h2>
-  <ul class="space-y-1 list-disc list-inside">
-    <li>Le informazioni personali o di contatto scambiate tra il cliente e l'artista sono considerate strettamente riservate e non saranno condivise senza autorizzazione esplicita.</li>
-    <li>Il cliente può richiedere la <span class="font-bold">riservatezza completa</span> sul lavoro per un costo aggiuntivo. In questo caso, l’opera non verrà pubblicata né mostrata in portfolio/social dell’artista.</li>
-    <li>Se non è richiesta riservatezza totale, l’artista potrà pubblicare o mostrare l’opera <span class="font-bold">dopo 30 giorni dalla consegna</span>, salvo altri accordi scritti.</li>
-  </ul>
-</li>
-
-<li>
-  <h2 class="font-bold text-primary mb-2 text-xl">10. Accettazione dell'Accordo</h2>
-  <ul class="space-y-1 list-disc list-inside">
-    <li>Effettuando un ordine, il cliente conferma di aver preso visione e di accettare integralmente tutti i termini e condizioni presenti in questo accordo.</li>
-    <li>L’accordo entra in vigore a partire dalla <span class="font-bold">prima comunicazione</span> (ad esempio messaggio, modulo o pagamento).</li>
-    <li>Il cliente dichiara di avere almeno <span class="font-bold">18 anni</span> oppure di essere rappresentato da un tutore legale autorizzato a stipulare contratti.</li>
-    <li>La data dell’accordo coincide con la data della prima interazione significativa tra le parti (contatto, conferma ordine o pagamento iniziale).</li>
-    <li class="text-warning"><span class="font-bold">Nota:</span> Agenzie, aziende o altre organizzazioni sono invitate a contattare direttamente l’artista prima dell’ordine per concordare ulteriori dettagli e condizioni specifiche.</li>
-  </ul>
-</li>
+          <li>
+            <h2 class="font-bold text-primary mb-2 text-xl">10. Acceptance of Agreement</h2>
+            <ul class="space-y-1 list-disc list-inside">
+              <li>By placing an order, the client confirms they have read and fully accept all terms and conditions in this agreement.</li>
+              <li>The agreement takes effect from the <span class="font-bold">first communication</span> (e.g. message, form or payment).</li>
+              <li>The client declares they are at least <span class="font-bold">18 years old</span> or represented by a legal guardian authorized to enter into contracts.</li>
+              <li>The agreement date coincides with the date of the first meaningful interaction between the parties (contact, order confirmation or initial payment).</li>
+              <li class="text-warning"><span class="font-bold">Note:</span> Agencies, companies or other organizations are invited to contact the artist directly before ordering to agree on additional details and specific conditions.</li>
+            </ul>
+          </li>
         </ol>
       </div>
     </div>
