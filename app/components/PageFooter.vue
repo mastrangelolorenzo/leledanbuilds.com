@@ -46,7 +46,7 @@
         </div>
 
         <!-- Legal -->
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2 md:border-l md:border-primary/30 md:pl-8">
           <h3 class="text-primary font-bold uppercase text-sm tracking-wide flex items-center gap-2 mb-1">
             <UIcon name="i-lucide-scale" />
             Legal
@@ -57,7 +57,7 @@
         </div>
 
         <!-- Contact -->
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2 md:border-l md:border-primary/30 md:pl-8">
           <h3 class="text-primary font-bold uppercase text-sm tracking-wide flex items-center gap-2 mb-1">
             <UIcon name="i-lucide-mail" />
             Contact

@@ -1,9 +1,7 @@
 <template>
-  <section id="reviews" class="relative bg-background py-14 md:py-20 overflow-hidden">
-    <div class="absolute inset-0 gold-aura pointer-events-none"></div>
-    <div class="absolute inset-0 grid-bg pointer-events-none"></div>
+  <section id="reviews" class="relative bg-background py-10 md:py-14 overflow-hidden">
 
-    <div class="relative max-w-3xl mx-auto flex flex-col items-center text-center px-4 mb-10">
+    <div class="relative max-w-3xl mx-auto flex flex-col items-center text-center px-4 mb-8">
       <h2 class="text-3xl md:text-5xl font-extrabold uppercase tracking-wide text-text">
         What Creators <span class="text-secondary">Say</span>
       </h2>
@@ -93,9 +91,3 @@ const reviews = [
   },
 ];
 </script>
-
-<style>
-.gold-aura {
-  background: linear-gradient(to bottom, rgba(244, 208, 63, 0.25), transparent 70%);
-}
-</style>

@@ -1,5 +1,6 @@
 <template>
-  <section class="relative bg-background py-14 px-4 overflow-hidden border-t border-b border-primary/40">
+  <section class="relative bg-background py-14 px-4 overflow-hidden">
+    <div class="absolute inset-0 gold-glow-bg pointer-events-none"></div>
     <div class="relative max-w-5xl mx-auto flex flex-col items-center text-center">
       <h2 class="text-2xl md:text-3xl font-extrabold uppercase tracking-wide text-text mb-8">
         By The Numbers
@@ -60,3 +61,9 @@ onBeforeUnmount(() => {
   if (rafId) cancelAnimationFrame(rafId);
 });
 </script>
+
+<style>
+.gold-glow-bg {
+  background: radial-gradient(circle 150px at center, rgba(244, 208, 63, 0.4), transparent 70%);
+}
+</style>
