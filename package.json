@@ -23,7 +23,6 @@
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260917.1",
     "nitro-cloudflare-dev": "^0.2.2",
     "vitest": "^5.0.1",
     "wrangler": "^4.133.0"
