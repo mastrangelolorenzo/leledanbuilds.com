@@ -3,12 +3,20 @@
     <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-5 gap-10 items-center">
       <!-- Avatar section, visually prioritized on desktop -->
       <div class="md:col-span-2 flex justify-center md:justify-end">
-        <div class="relative group">
-          <img
-            src="/images/profile_picture.webp"
-            alt="Minecraft avatar"
-            class="w-48 h-48 md:w-72 md:h-72 object-cover rounded-lg shadow-2xl shadow-primary/30 bg-background transition-transform duration-300 group-hover:scale-105"
-          />
+        <div class="relative group" style="perspective: 1000px;">
+          <div
+            ref="tiltCard"
+            class="relative transition-transform duration-150 ease-out will-change-transform"
+            :style="tiltStyle"
+            @mousemove="onTiltMove"
+            @mouseleave="onTiltLeave"
+          >
+            <img
+              src="/images/profile_picture.webp"
+              alt="Minecraft avatar"
+              class="w-48 h-48 md:w-72 md:h-72 object-cover rounded-lg shadow-2xl shadow-primary/30 bg-background"
+            />
+          </div>
           <!-- Fancy ring effect behind avatar -->
           <span class="absolute inset-0 rounded-lg ring-4 ring-primary/30 animate-pulse -z-10"></span>
           <!-- Decorative blurred accent squares -->
@@ -19,7 +27,7 @@
       <!-- Bio text section -->
       <div class="md:col-span-3 flex flex-col items-start">
         <h1 class="text-3xl md:text-4xl font-extrabold tracking-wide mb-4">
-          About <span class="text-primary">leledan06</span>
+          About <span class="gold-glow">leledan06</span>
         </h1>
         <div class="space-y-2 text-text text-lg leading-relaxed tracking-wide">
           <p>
@@ -45,3 +53,25 @@
     </div>
   </section>
 </template>
+
+<script lang="ts" setup>
+import { ref } from "vue";
+
+const tiltCard = ref<HTMLElement | null>(null);
+const tiltStyle = ref("transform: rotateX(0deg) rotateY(0deg) scale(1);");
+
+function onTiltMove(e: MouseEvent) {
+  const el = tiltCard.value;
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width;
+  const y = (e.clientY - rect.top) / rect.height;
+  const rotateY = (x - 0.5) * 20;
+  const rotateX = (0.5 - y) * 20;
+  tiltStyle.value = `transform: rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05);`;
+}
+
+function onTiltLeave() {
+  tiltStyle.value = "transform: rotateX(0deg) rotateY(0deg) scale(1);";
+}
+</script>

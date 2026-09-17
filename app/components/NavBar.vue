@@ -1,6 +1,6 @@
 <template>
   <nav class="flex items-center justify-center py-3 px-4 sm:py-4 sm:px-8">
-    <div class="flex items-center w-full max-w-5xl rounded-full bg-background-secondary/60 px-6 sm:px-9 py-3.5">
+    <div class="flex items-center w-full max-w-3xl rounded-full bg-background-secondary/60 px-5 sm:px-7 py-3.5">
       <!-- Logo -->
       <NuxtLink to="/" class="flex items-center gap-2 shrink-0">
         <img src="/images/logo.png" alt="leledan06 logo" class="h-8 w-auto object-contain" />
@@ -151,7 +151,7 @@
   const items = ref([
     {
       label: 'Browse',
-      to: '/portfolio',
+      to: '/browse',
       icon: 'i-lucide-image',
     },
     {

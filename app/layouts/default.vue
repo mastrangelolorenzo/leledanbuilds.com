@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen flex flex-col">
-    <div class="flex-1">
+  <div class="min-h-screen flex flex-col bg-background">
+    <div class="flex-1 bg-background">
       <slot />
     </div>
     <PageFooter />

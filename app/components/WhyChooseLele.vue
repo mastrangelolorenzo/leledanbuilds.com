@@ -9,12 +9,12 @@
         <div
           v-for="reason in reasons"
           :key="reason.title"
-          class="relative rounded-2xl overflow-hidden border-2 border-primary/40 hover:border-primary transition-all duration-300 bg-background-secondary aspect-[4/3]"
+          class="group relative rounded-2xl overflow-hidden border-2 border-primary/40 hover:border-primary transition-all duration-300 bg-background-secondary aspect-[4/3]"
         >
           <img
             :src="reason.image"
             :alt="reason.title"
-            class="absolute inset-0 w-full h-full object-contain object-bottom scale-125 origin-bottom"
+            class="absolute inset-0 w-full h-full object-contain object-bottom scale-125 origin-bottom transition-transform duration-500 group-hover:scale-150"
             draggable="false"
           />
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
@@ -47,19 +47,3 @@ const reasons = [
   },
 ];
 </script>
-
-<style>
-.gold-glow {
-  background: linear-gradient(90deg, #fff6d6, #f4d03f, #d4af37, #f4d03f, #fff6d6);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 0 20px rgba(244, 208, 63, 0.55), 0 0 40px rgba(212, 175, 55, 0.35);
-  animation: gold-shine 4s linear infinite;
-}
-@keyframes gold-shine {
-  0% { background-position: 0% center; }
-  100% { background-position: 200% center; }
-}
-</style>

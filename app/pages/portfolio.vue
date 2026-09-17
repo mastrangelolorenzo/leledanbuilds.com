@@ -6,7 +6,7 @@
 
     <!-- Signature Builds -->
     <section class="max-w-6xl mx-auto px-4 pb-16">
-      <h2 class="text-2xl md:text-3xl font-extrabold uppercase tracking-wide text-secondary text-center mb-2">Signature Builds</h2>
+      <h2 class="text-2xl md:text-3xl font-extrabold uppercase tracking-wide text-center mb-2 gold-glow">Signature Builds</h2>
       <p class="text-text/70 text-center max-w-2xl mx-auto mb-10">
         Detailed, competition-grade projects with a story behind every block.
       </p>
@@ -81,9 +81,9 @@
     {
       image: "/portfolio/47.webp",
       title: "Freaky Nikki: Obsession Movie",
-      teaser: "A hyper-realistic 3D portrait of the unsettling character from the thriller movie Obsessed.",
+      teaser: "A hyper-realistic 3D portrait of the unsettling character from the thriller movie Obsession.",
       description:
-        "This project represents an extraordinary leap forward in Minecraft block manipulation, pushing the game's boundaries toward hyper-realistic portraiture. The artwork is a faithful and detailed three-dimensional reproduction of the famous and unsettling character \"Freaky Nikki\" (played by Ali Larter) from the thriller movie Obsessed.\n\nThe core of the build lies in the incredible execution of facial expressions. Through a meticulous study of chiaroscuro and skin tone shading, the piece perfectly captures the piercing gaze and the distorted, enigmatic smile of the character, a key element of her psychological profile in the film. The background, featuring warm tones and soft vertical lines, recreates the original cinematic atmosphere, emphasizing the complex texturing of the dark hair and the folds of the white dress. A flawless blend of advanced pixel art and digital sculpture.",
+        "This project represents an extraordinary leap forward in Minecraft block manipulation, pushing the game's boundaries toward hyper-realistic portraiture. The artwork is a faithful and detailed three-dimensional reproduction of the famous and unsettling character \"Freaky Nikki\" (played by Ali Larter) from the thriller movie Obsession.\n\nThe core of the build lies in the incredible execution of facial expressions. Through a meticulous study of chiaroscuro and skin tone shading, the piece perfectly captures the piercing gaze and the distorted, enigmatic smile of the character, a key element of her psychological profile in the film. The background, featuring warm tones and soft vertical lines, recreates the original cinematic atmosphere, emphasizing the complex texturing of the dark hair and the folds of the white dress. A flawless blend of advanced pixel art and digital sculpture.",
     },
     {
       image: "/portfolio/48.webp",

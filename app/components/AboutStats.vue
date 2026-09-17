@@ -1,6 +1,5 @@
 <template>
   <section class="relative py-14 px-4 overflow-x-auto">
-    <div class="absolute inset-0 gold-glow-bg pointer-events-none"></div>
     <div ref="statsRef" class="relative max-w-4xl mx-auto rounded-3xl bg-background-secondary/50 shadow-xl px-4 md:px-12 py-6 md:py-10 w-fit min-w-full sm:min-w-0">
       <div class="flex flex-nowrap justify-center items-center">
         <template v-for="(stat, index) in stats" :key="stat.label">
@@ -65,9 +64,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style>
-.gold-glow-bg {
-  background: radial-gradient(circle 150px at center, rgba(244, 208, 63, 0.4), transparent 70%);
-}
 .stat-number {
   background: linear-gradient(180deg, #ffffff 0%, #d9d9d9 45%, #8a8a8a 100%);
   -webkit-background-clip: text;

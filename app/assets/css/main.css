@@ -10,6 +10,24 @@
     --color-text: #ffffff;
 }
 
+html, body {
+  background-color: var(--color-background);
+}
+
+.gold-glow {
+  background: linear-gradient(90deg, #fff6d6, #f4d03f, #d4af37, #f4d03f, #fff6d6);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 20px rgba(244, 208, 63, 0.55), 0 0 40px rgba(212, 175, 55, 0.35);
+  animation: gold-shine 4s linear infinite;
+}
+@keyframes gold-shine {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
 .grid-bg {
   background-image:
     linear-gradient(rgba(212, 175, 55, 0.12) 1px, transparent 1px),

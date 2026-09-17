@@ -1,0 +1,190 @@
+<template>
+  <div class="bg-background">
+    <NavBar class="sticky top-0 z-10" />
+
+    <div class="relative overflow-hidden py-14 md:py-20 px-6 md:px-10 lg:px-16">
+      <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none"></div>
+
+      <div class="relative w-full max-w-none">
+        <div class="flex flex-col items-start mb-10">
+          <h1 class="text-4xl md:text-6xl font-black uppercase tracking-tight text-text">
+            Browse <span class="text-primary">Builds</span>
+          </h1>
+          <p class="text-text/60 mt-2">
+            Explore {{ products.length }} premium Minecraft builds
+          </p>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-8">
+          <!-- Sidebar -->
+          <aside class="w-full md:w-72 shrink-0 flex flex-col gap-6">
+            <div class="bg-background-secondary border border-white/10 rounded-2xl p-5">
+              <h3 class="text-text/50 text-xs uppercase tracking-widest font-bold mb-4">Build Type</h3>
+              <div class="flex flex-col gap-1">
+                <button
+                  v-for="type in buildTypes"
+                  :key="type"
+                  type="button"
+                  class="text-left px-2 py-1.5 rounded-lg text-sm font-semibold transition-colors duration-200"
+                  :class="activeBuildTypes.includes(type)
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-text/70 hover:text-primary hover:bg-white/5'"
+                  @click="toggleFilter(activeBuildTypes, type)"
+                >
+                  {{ type }}
+                </button>
+              </div>
+            </div>
+
+            <div class="bg-background-secondary border border-white/10 rounded-2xl p-5">
+              <h3 class="text-text/50 text-xs uppercase tracking-widest font-bold mb-4">Theme</h3>
+              <div class="flex flex-col gap-1">
+                <button
+                  v-for="theme in themes"
+                  :key="theme"
+                  type="button"
+                  class="text-left px-2 py-1.5 rounded-lg text-sm font-semibold transition-colors duration-200"
+                  :class="activeThemes.includes(theme)
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-text/70 hover:text-primary hover:bg-white/5'"
+                  @click="toggleFilter(activeThemes, theme)"
+                >
+                  {{ theme }}
+                </button>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Results -->
+          <div class="flex-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div
+                v-for="item in paginatedProducts"
+                :key="item.title"
+                class="group relative bg-background-secondary border border-white/10 rounded-2xl overflow-hidden flex flex-col transition-transform duration-300 hover:-translate-y-1"
+              >
+                <img
+                  :src="item.image"
+                  :alt="item.title"
+                  class="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500"
+                  draggable="false"
+                />
+                <div class="p-5 flex flex-col flex-1">
+                  <h3 class="text-white font-extrabold uppercase text-lg tracking-wide mb-3">{{ item.title }}</h3>
+
+                  <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <span class="px-2.5 py-1 rounded-full border border-primary/40 text-primary text-[11px] font-semibold uppercase tracking-wide">{{ item.buildType }}</span>
+                    <span class="px-2.5 py-1 rounded-full border border-white/20 text-text/70 text-[11px] font-semibold uppercase tracking-wide">{{ item.theme }}</span>
+                  </div>
+
+                  <div class="flex items-center gap-2 mb-4">
+                    <span class="text-text/50 text-xs uppercase tracking-wide font-semibold">{{ item.difficulty }}</span>
+                    <span class="flex items-center gap-1">
+                      <span
+                        v-for="n in 4"
+                        :key="n"
+                        class="w-2.5 h-2.5 rounded-sm"
+                        :class="n <= difficultyLevels[item.difficulty] ? 'bg-primary' : 'bg-white/15'"
+                      ></span>
+                    </span>
+                  </div>
+
+                  <div class="flex items-center justify-between mt-auto">
+                    <span class="text-primary font-black text-2xl">€{{ item.price }}</span>
+                    <NuxtLink
+                      :to="`/browse/${item.slug}`"
+                      class="inline-flex items-center gap-1.5 bg-primary text-black font-bold uppercase text-sm rounded-full px-4 py-2 hover:bg-secondary transition-all duration-300"
+                    >
+                      View Build
+                      <UIcon name="i-lucide-arrow-right" class="text-sm" />
+                    </NuxtLink>
+                  </div>
+                </div>
+              </div>
+
+              <p v-if="paginatedProducts.length === 0" class="text-text/50 col-span-full text-center py-16">
+                No builds match the selected filters.
+              </p>
+            </div>
+
+            <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 mt-10">
+              <button
+                type="button"
+                class="w-9 h-9 flex items-center justify-center rounded-full border border-white/20 text-text/70 hover:border-primary hover:text-primary transition-all duration-300 disabled:opacity-30 disabled:hover:border-white/20 disabled:hover:text-text/70"
+                :disabled="currentPage === 1"
+                @click="currentPage--"
+              >
+                <UIcon name="i-lucide-chevron-left" />
+              </button>
+              <button
+                v-for="page in totalPages"
+                :key="page"
+                type="button"
+                class="w-9 h-9 flex items-center justify-center rounded-full text-sm font-bold border transition-all duration-300"
+                :class="currentPage === page
+                  ? 'bg-primary text-black border-primary'
+                  : 'bg-transparent text-text/70 border-white/20 hover:border-primary hover:text-primary'"
+                @click="currentPage = page"
+              >
+                {{ page }}
+              </button>
+              <button
+                type="button"
+                class="w-9 h-9 flex items-center justify-center rounded-full border border-white/20 text-text/70 hover:border-primary hover:text-primary transition-all duration-300 disabled:opacity-30 disabled:hover:border-white/20 disabled:hover:text-text/70"
+                :disabled="currentPage === totalPages"
+                @click="currentPage++"
+              >
+                <UIcon name="i-lucide-chevron-right" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, computed, watch } from "vue";
+
+import { products, difficultyLevels } from "~/data/products";
+
+const buildTypes = [...new Set(products.map((p) => p.buildType))];
+const themes = [...new Set(products.map((p) => p.theme))];
+
+const activeBuildTypes = ref<string[]>([]);
+const activeThemes = ref<string[]>([]);
+
+function toggleFilter(list: string[], value: string) {
+  const index = list.indexOf(value);
+  if (index === -1) {
+    list.push(value);
+  } else {
+    list.splice(index, 1);
+  }
+}
+
+const filteredProducts = computed(() =>
+  products.filter(
+    (p) =>
+      (activeBuildTypes.value.length === 0 || activeBuildTypes.value.includes(p.buildType)) &&
+      (activeThemes.value.length === 0 || activeThemes.value.includes(p.theme))
+  )
+);
+
+const pageSize = 6;
+const currentPage = ref(1);
+
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(filteredProducts.value.length / pageSize))
+);
+
+const paginatedProducts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return filteredProducts.value.slice(start, start + pageSize);
+});
+
+watch([activeBuildTypes, activeThemes], () => {
+  currentPage.value = 1;
+}, { deep: true });
+</script>

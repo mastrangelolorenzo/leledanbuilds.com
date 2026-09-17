@@ -23,14 +23,14 @@
     <div class="absolute inset-0 z-10 bg-gradient-to-r from-black/50 via-transparent to-transparent pointer-events-none"></div>
 
     <div class="relative z-20 flex-1 w-full px-6 md:px-14 flex flex-col items-center justify-center text-center">
-      <span class="flex items-center gap-3 text-foreground/70 text-xs md:text-sm uppercase tracking-[0.25em] font-semibold mb-4">
+      <span class="flex items-center gap-3 text-foreground/70 text-sm md:text-base uppercase tracking-[0.25em] font-semibold mb-5">
         <span class="w-9 h-px bg-secondary"></span>
         Hand-crafted Minecraft builds
         <span class="w-9 h-px bg-secondary"></span>
       </span>
 
       <h1
-        class="text-foreground drop-shadow-lg text-center text-3xl md:text-5xl font-black uppercase tracking-tight leading-[1.15]"
+        class="text-foreground drop-shadow-lg text-center text-4xl md:text-7xl font-black uppercase tracking-tight leading-[1.15]"
       >
         <span class="block whitespace-nowrap">Shaping a new world,</span>
         <span class="block whitespace-nowrap text-secondary">block by block!</span>
@@ -38,18 +38,18 @@
 
       <NuxtLink
         to="/portfolio"
-        class="inline-flex items-center gap-3 text-sm font-bold uppercase tracking-wide bg-primary text-black rounded-full pl-6 pr-2 py-2 shadow-lg shadow-primary/20 hover:bg-secondary transform hover:scale-105 transition-all duration-300 mt-7"
+        class="inline-flex items-center gap-4 text-base font-bold uppercase tracking-wide bg-primary text-black rounded-full pl-8 pr-3 py-3 shadow-lg shadow-primary/20 hover:bg-secondary transform hover:scale-105 transition-all duration-300 mt-8"
       >
         <span>Browse builds</span>
-        <span class="flex items-center justify-center w-9 h-9 rounded-full bg-black/20">
-          <UIcon name="i-lucide-arrow-right" class="text-base" />
+        <span class="flex items-center justify-center w-11 h-11 rounded-full bg-black/20">
+          <UIcon name="i-lucide-arrow-right" class="text-lg" />
         </span>
       </NuxtLink>
 
     </div>
 
-    <div class="relative z-20 w-full pb-10 md:pb-14 flex flex-col items-center gap-4">
-      <span class="text-foreground/60 text-base md:text-lg uppercase tracking-widest font-bold">Work seen on</span>
+    <div class="relative z-20 w-full pb-10 md:pb-14 flex flex-col items-center gap-5">
+      <span class="text-foreground/60 text-xl md:text-2xl uppercase tracking-widest font-bold">Work seen on</span>
       <UMarquee :overlay="false" :pauseOnHover="true" class="w-full py-2">
         <a
           v-for="creator in workSeenOn"
@@ -59,10 +59,10 @@
           rel="noopener noreferrer"
           class="flex items-center gap-4 mx-5 hover:-translate-y-0.5 transition-all duration-300"
         >
-          <img :src="creator.image" :alt="creator.name" class="w-16 h-16 rounded-full object-cover border-2 border-secondary/70 shrink-0" />
+          <img :src="creator.image" :alt="creator.name" class="w-20 h-20 rounded-full object-cover border-2 border-secondary/70 shrink-0" />
           <span class="flex flex-col leading-tight whitespace-nowrap">
-            <span class="text-foreground text-xl font-bold">{{ creator.name }}</span>
-            <span class="text-foreground/50 text-sm">{{ creator.counter }}</span>
+            <span class="text-foreground text-2xl font-bold">{{ creator.name }}</span>
+            <span class="text-foreground/50 text-base">{{ creator.counter }}</span>
           </span>
         </a>
       </UMarquee>
@@ -74,17 +74,17 @@
 import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 
 const workSeenOn = [
-  { image: "/customers/zenith.webp", name: "Zenith", counter: "300k subs", link: "https://www.youtube.com/@zenithminecraft" },
-  { image: "/customers/divvy.webp", name: "Divvy", counter: "202k subs", link: "https://www.youtube.com/@divvyminecraft" },
-  { image: "/customers/cypro.webp", name: "Cypro", counter: "41.3k subs", link: "https://www.youtube.com/@cyproh" },
-  { image: "/customers/tigr8.webp", name: "Tigr8", counter: "148k subs", link: "https://www.youtube.com/@Tigr8" },
-  { image: "/customers/lilygumdrop.webp", name: "LilyGumdrop", counter: "1.64M subs", link: "https://www.youtube.com/@Lilygumdrop-rb" },
-  { image: "/customers/yeslucid.webp", name: "yeslucid", counter: "198k subs", link: "https://www.youtube.com/@yeslucid" },
-  { image: "/customers/onmod.webp", name: "OnMod", counter: "18.2k subs", link: "https://www.youtube.com/@OnMod" },
-  { image: "/customers/gabby16bit.webp", name: "Gabby16bit", counter: "3.5M subs", link: "https://www.youtube.com/@Gabby16bit" },
-  { image: "/customers/sharkliz.webp", name: "sharkliz", counter: "400k+ subs", link: "https://www.youtube.com/@Sharkilz" },
-  { image: "/customers/swizu.webp", name: "swizu", counter: "66k+ subs", link: "https://www.youtube.com/@swizu_" },
-  { image: "/customers/mythicalpingu.webp", name: "mythicalpingu", counter: "35k+ subs", link: "https://www.youtube.com/channel/UCZPR2no7zsOlsgFWBYvPWVg" },
+  { image: "/customers/zenith.webp", name: "Zenith", counter: "334k+ subs", link: "https://www.youtube.com/@zenithminecraft" },
+  { image: "/customers/divvy.webp", name: "Divvy", counter: "276k+ subs", link: "https://www.youtube.com/@divvyminecraft" },
+  { image: "/customers/cypro.webp", name: "Cypro", counter: "96.7k+ subs", link: "https://www.youtube.com/@cyproh" },
+  { image: "/customers/tigr8.webp", name: "Tigr8", counter: "145k+ subs", link: "https://www.youtube.com/@Tigr8" },
+  { image: "/customers/lilygumdrop.webp", name: "LilyGumdrop", counter: "3.02M+ subs", link: "https://www.youtube.com/@Lilygumdrop-rb" },
+  { image: "/customers/yeslucid.webp", name: "yeslucid", counter: "168k+ subs", link: "https://www.youtube.com/@yeslucid" },
+  { image: "/customers/onmod.webp", name: "OnMod", counter: "19.5k+ subs", link: "https://www.youtube.com/@OnMod" },
+  { image: "/customers/gabby16bit.webp", name: "Gabby16bit", counter: "3.52M+ subs", link: "https://www.youtube.com/gabby16bit" },
+  { image: "/customers/sharkliz.webp", name: "sharkliz", counter: "399k+ subs", link: "https://www.youtube.com/@Sharkilz" },
+  { image: "/customers/swizu.webp", name: "swizu", counter: "64.8k+ subs", link: "https://www.youtube.com/@swizu_" },
+  { image: "/customers/mythicalpingu.webp", name: "mythicalpingu", counter: "35.6k+ subs", link: "https://www.youtube.com/@MythicalPingu" },
 ];
 
 const bgImages = [
