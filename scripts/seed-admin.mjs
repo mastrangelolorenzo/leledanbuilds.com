@@ -1,5 +1,8 @@
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { webcrypto } from 'node:crypto'
+import { writeFileSync, unlinkSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 
 const email = process.env.ADMIN_EMAIL
 const password = process.env.ADMIN_PASSWORD
@@ -27,5 +30,16 @@ const passwordHash = await hash(password, salt)
 
 const sql = `INSERT INTO users (email, password_hash, salt, role) VALUES ('${email.replace(/'/g, "''")}', '${passwordHash}', '${salt}', 'admin');`
 
-execSync(`npx wrangler d1 execute leledan-builds --local --command "${sql}"`, { stdio: 'inherit' })
-console.log(`Admin user ${email} seeded locally.`)
+const sqlFile = join(tmpdir(), `seed-admin-${Date.now()}.sql`)
+try {
+  writeFileSync(sqlFile, sql, 'utf8')
+
+  const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx'
+  execFileSync(npxCmd, ['wrangler', 'd1', 'execute', 'leledan-builds', '--local', '--file', sqlFile], { stdio: 'inherit', shell: true })
+
+  console.log(`Admin user ${email} seeded locally.`)
+} finally {
+  try {
+    unlinkSync(sqlFile)
+  } catch {}
+}
