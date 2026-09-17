@@ -8,7 +8,10 @@
         My most detailed and ambitious builds, crafted for competitions, collaborations and large-scale visions.
       </p>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
+      <p v-if="!projects?.length" class="text-text/50 text-center py-8">
+        Projects are temporarily unavailable — check back soon.
+      </p>
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
         <button
           v-for="project in projects ?? []"
           :key="project.id"
@@ -76,7 +79,7 @@ interface Project {
   description: string
 }
 
-const { data: projects } = await useFetch<Project[]>('/api/posts/home')
+const { data: projects, error } = await useFetch<Project[]>('/api/posts/home')
 
 const openProject = ref<Project | null>(null);
 </script>

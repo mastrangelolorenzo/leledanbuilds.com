@@ -11,7 +11,10 @@
         Detailed, competition-grade projects with a story behind every block.
       </p>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <p v-if="!signatureBuilds?.length" class="text-text/50 text-center py-8">
+        Signature builds are temporarily unavailable — check back soon.
+      </p>
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <button
           v-for="build in signatureBuilds ?? []"
           :key="build.id"
@@ -72,7 +75,7 @@ interface Build {
   description: string
 }
 
-const { data: signatureBuilds } = await useFetch<Build[]>('/api/posts/portfolio')
+const { data: signatureBuilds, error } = await useFetch<Build[]>('/api/posts/portfolio')
 
 const openBuild = ref<Build | null>(null)
 </script>
