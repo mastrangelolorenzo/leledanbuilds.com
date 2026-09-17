@@ -14,16 +14,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 503, statusMessage: 'Database unavailable' })
   }
 
-  const existing = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first()
-  if (existing) {
-    throw createError({ statusCode: 409, statusMessage: 'An account with this email already exists.' })
-  }
-
   const { hash, salt } = await hashPassword(password)
-  await db
-    .prepare('INSERT INTO users (email, password_hash, salt, role) VALUES (?, ?, ?, ?)')
-    .bind(email, hash, salt, 'user')
-    .run()
+  try {
+    await db
+      .prepare('INSERT INTO users (email, password_hash, salt, role) VALUES (?, ?, ?, ?)')
+      .bind(email, hash, salt, 'user')
+      .run()
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {
+      throw createError({ statusCode: 409, statusMessage: 'An account with this email already exists.' })
+    }
+    throw err
+  }
 
   return { success: true }
 })
