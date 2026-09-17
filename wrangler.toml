@@ -1,0 +1,9 @@
+name = "leledan-ws"
+compatibility_date = "2025-07-15"
+pages_build_output_dir = ".output/public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "leledan-builds"
+database_id = "9dbc22b2-8149-448d-a15d-2ec1ec011cd9"
+migrations_dir = "server/database/migrations"
