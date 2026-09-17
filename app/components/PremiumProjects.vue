@@ -79,7 +79,7 @@ interface Project {
   description: string
 }
 
-const { data: projects, error } = await useFetch<Project[]>('/api/posts/home')
+const { data: projects } = await useFetch<Project[]>('/api/posts/home')
 
 const openProject = ref<Project | null>(null);
 </script>

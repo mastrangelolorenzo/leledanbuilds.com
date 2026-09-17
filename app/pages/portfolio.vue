@@ -75,7 +75,7 @@ interface Build {
   description: string
 }
 
-const { data: signatureBuilds, error } = await useFetch<Build[]>('/api/posts/portfolio')
+const { data: signatureBuilds } = await useFetch<Build[]>('/api/posts/portfolio')
 
 const openBuild = ref<Build | null>(null)
 </script>
