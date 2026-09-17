@@ -25,3 +25,6 @@ logs
 
 # Local D1 SQLite state
 .wrangler/
+
+# Local Cloudflare dev secrets
+.dev.vars
