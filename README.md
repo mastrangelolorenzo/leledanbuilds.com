@@ -225,6 +225,20 @@ The project uses a custom color scheme defined in Tailwind CSS. Key colors inclu
 - Optimized images with WebP format
 - Robots.txt included
 
+## Database (Cloudflare D1)
+
+This site reads its featured "Premium Projects" / "Signature Builds" from a
+Cloudflare D1 database (binding name `DB`, see `wrangler.toml`). Writes only
+ever happen from the separate admin dashboard app — this repo is read-only.
+
+- Local dev: `npm run dev` uses `nitro-cloudflare-dev` to emulate `DB`
+  against a local SQLite file under `.wrangler/`.
+- Migrations live in `server/database/migrations/*.sql`, applied in
+  filename order.
+- Apply migrations locally: `npm run db:migrate:local`
+- Apply migrations to the deployed database: `npm run db:migrate:remote`
+- Run the data-layer tests: `npm test`
+
 ## 📄 License
 
 Private project - All rights reserved.
