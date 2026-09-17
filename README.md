@@ -228,8 +228,10 @@ The project uses a custom color scheme defined in Tailwind CSS. Key colors inclu
 ## Database (Cloudflare D1)
 
 This site reads its featured "Premium Projects" / "Signature Builds" from a
-Cloudflare D1 database (binding name `DB`, see `wrangler.toml`). Writes only
-ever happen from the separate admin dashboard app — this repo is read-only.
+Cloudflare D1 database (binding name `DB`, see `wrangler.toml`). The public
+marketing pages are read-only; the only writes come from the admin
+dashboard under `/app/*` (see the "Dashboard (`/app`)" section below) —
+both live in this same app and share the same D1 binding.
 
 - Local dev: `npm run dev` uses `nitro-cloudflare-dev` to emulate `DB`
   against a local SQLite file under `.wrangler/`.
@@ -238,6 +240,30 @@ ever happen from the separate admin dashboard app — this repo is read-only.
 - Apply migrations locally: `npm run db:migrate:local`
 - Apply migrations to the deployed database: `npm run db:migrate:remote`
 - Run the data-layer tests: `npm test`
+
+## Dashboard (`/app`)
+
+Admin + user dashboard, served from this same app under `/app/*`
+(`/app/login`, `/app/register`, `/app`, `/app/posts`). Shares the same D1
+database and binding as the public marketing pages — this is the only part
+of the app with write access to the `posts` table, and the only part with
+a `users` table.
+
+### Local dev
+
+1. Copy `.dev.vars.example` to `.dev.vars` and fill in `SESSION_SECRET`
+   (any long random string, 32+ chars).
+2. `npm run db:migrate:local` (applies the `users` table migration if not
+   already applied).
+3. `ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=... node scripts/seed-admin.mjs`
+4. `npm run dev`, then visit `/app/login`.
+
+### Deploy
+
+`npx wrangler d1 migrations apply leledan-builds --remote` before the first
+deploy that includes the `users` table. Set `SESSION_SECRET` as a
+Cloudflare Pages secret (not in any committed file):
+`npx wrangler pages secret put SESSION_SECRET`.
 
 ## 📄 License
 
