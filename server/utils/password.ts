@@ -7,9 +7,18 @@ function toHex(buffer: ArrayBuffer) {
 function fromHex(hex: string) {
   const bytes = new Uint8Array(hex.length / 2)
   for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(hex.substr(i * 2, 2), 16)
+    bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
   }
   return bytes
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let mismatch = 0
+  for (let i = 0; i < a.length; i++) {
+    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return mismatch === 0
 }
 
 async function deriveHash(password: string, saltBytes: Uint8Array): Promise<string> {
@@ -37,5 +46,5 @@ export async function hashPassword(password: string): Promise<{ hash: string, sa
 
 export async function verifyPassword(password: string, hash: string, salt: string): Promise<boolean> {
   const candidate = await deriveHash(password, fromHex(salt))
-  return candidate === hash
+  return timingSafeEqual(candidate, hash)
 }
