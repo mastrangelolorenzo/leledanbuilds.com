@@ -1,5 +1,5 @@
 import { requireAdmin } from '../../utils/requireAdmin'
-import { slugify, assertFeatureLimit } from '../../utils/postValidation'
+import { slugify, assertFeatureLimit, isUniqueConstraintError } from '../../utils/postValidation'
 
 interface CreatePostBody {
   title: string
@@ -32,13 +32,21 @@ export default defineEventHandler(async (event) => {
   const slug = slugify(body.title)
   const now = new Date().toISOString()
 
-  const result = await db
-    .prepare(
-      `INSERT INTO posts (title, slug, image_url, teaser, description, featured_home, featured_portfolio, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .bind(body.title, slug, body.image_url, body.teaser, body.description, featuredHome, featuredPortfolio, now, now)
-    .run()
+  let result
+  try {
+    result = await db
+      .prepare(
+        `INSERT INTO posts (title, slug, image_url, teaser, description, featured_home, featured_portfolio, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(body.title, slug, body.image_url, body.teaser, body.description, featuredHome, featuredPortfolio, now, now)
+      .run()
+  } catch (err) {
+    if (isUniqueConstraintError(err)) {
+      throw createError({ statusCode: 409, statusMessage: 'A post with this title already exists.' })
+    }
+    throw err
+  }
 
   return { id: result.meta.last_row_id }
 })

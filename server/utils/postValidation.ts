@@ -18,12 +18,12 @@ export async function assertFeatureLimit(
   excludeId: number | null
 ): Promise<void> {
   const column = list === 'home' ? 'featured_home' : 'featured_portfolio'
-  const sql = excludeId
+  const sql = excludeId !== null
     ? `SELECT COUNT(*) as count FROM posts WHERE ${column} = 1 AND id != ?`
     : `SELECT COUNT(*) as count FROM posts WHERE ${column} = 1`
 
   const statement = db.prepare(sql)
-  const bound = excludeId ? statement.bind(excludeId) : statement.bind()
+  const bound = excludeId !== null ? statement.bind(excludeId) : statement.bind()
   const row = await bound.first<CountRow>()
 
   if ((row?.count ?? 0) >= 4) {
@@ -32,4 +32,8 @@ export async function assertFeatureLimit(
       statusMessage: `At most 4 posts can be featured on "${list}". Un-feature one first.`,
     })
   }
+}
+
+export function isUniqueConstraintError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes('UNIQUE constraint failed')
 }

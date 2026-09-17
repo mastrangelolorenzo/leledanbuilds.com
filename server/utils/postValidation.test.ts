@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { slugify, assertFeatureLimit } from './postValidation'
+import { slugify, assertFeatureLimit, isUniqueConstraintError } from './postValidation'
 
 describe('slugify', () => {
   it('lowercases, strips punctuation and hyphenates spaces', () => {
@@ -23,5 +23,15 @@ describe('assertFeatureLimit', () => {
   it('throws a 409 when exactly 4 posts are already featured', async () => {
     const db = fakeDbWithCount(4)
     await expect(assertFeatureLimit(db as never, 'home', null)).rejects.toMatchObject({ statusCode: 409 })
+  })
+})
+
+describe('isUniqueConstraintError', () => {
+  it('returns true for a UNIQUE constraint failure', () => {
+    expect(isUniqueConstraintError(new Error('UNIQUE constraint failed: posts.slug'))).toBe(true)
+  })
+
+  it('returns false for other errors', () => {
+    expect(isUniqueConstraintError(new Error('some other error'))).toBe(false)
   })
 })

@@ -1,4 +1,5 @@
 import { hashPassword } from '../../utils/password'
+import { isUniqueConstraintError } from '../../utils/postValidation'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ email?: string, password?: string }>(event)
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
       .bind(email, hash, salt, 'user')
       .run()
   } catch (err) {
-    if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {
+    if (isUniqueConstraintError(err)) {
       throw createError({ statusCode: 409, statusMessage: 'An account with this email already exists.' })
     }
     throw err
