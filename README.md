@@ -249,6 +249,11 @@ database and binding as the public marketing pages — this is the only part
 of the app with write access to the `posts` table, and the only part with
 a `users` table.
 
+Also manages: "Work Seen On" creators (`/app/work-seen-on`), customer
+reviews (`/app/reviews`), and pricing plans (`/app/pricing`) — same pattern
+as posts, each with its own D1 table and public read-only route
+(`/api/work-seen-on`, `/api/reviews`, `/api/pricing`).
+
 ### Local dev
 
 1. Copy `.dev.vars.example` to `.dev.vars` and fill in `SESSION_SECRET`
