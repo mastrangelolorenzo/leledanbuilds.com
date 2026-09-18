@@ -1,7 +1,9 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   const isAppRoute = to.path === '/app' || to.path.startsWith('/app/')
   const isPublicAppRoute = to.path === '/app/login' || to.path === '/app/register'
-  const isAdminRoute = to.path.startsWith('/app/posts')
+  const isAdminRoute = ['/app/posts', '/app/work-seen-on', '/app/reviews', '/app/pricing'].some(
+    p => to.path === p || to.path.startsWith(`${p}/`)
+  )
 
   if (!isAppRoute || isPublicAppRoute) return
 

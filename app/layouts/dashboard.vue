@@ -22,6 +22,30 @@
         >
           Posts
         </NuxtLink>
+        <NuxtLink
+          v-if="user?.role === 'admin'"
+          to="/app/work-seen-on"
+          class="text-xs font-bold uppercase tracking-wide"
+          :class="isActive('/app/work-seen-on') ? 'text-primary' : 'text-text/60'"
+        >
+          Work Seen On
+        </NuxtLink>
+        <NuxtLink
+          v-if="user?.role === 'admin'"
+          to="/app/reviews"
+          class="text-xs font-bold uppercase tracking-wide"
+          :class="isActive('/app/reviews') ? 'text-primary' : 'text-text/60'"
+        >
+          Reviews
+        </NuxtLink>
+        <NuxtLink
+          v-if="user?.role === 'admin'"
+          to="/app/pricing"
+          class="text-xs font-bold uppercase tracking-wide"
+          :class="isActive('/app/pricing') ? 'text-primary' : 'text-text/60'"
+        >
+          Pricing
+        </NuxtLink>
         <button class="text-text/60 hover:text-primary transition-colors" aria-label="Log out" @click="logout">
           <UIcon name="i-lucide-log-out" class="text-lg" />
         </button>
@@ -52,6 +76,33 @@
         >
           <UIcon name="i-lucide-image" class="text-base shrink-0" />
           Posts
+        </NuxtLink>
+        <NuxtLink
+          v-if="user?.role === 'admin'"
+          to="/app/work-seen-on"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          :class="isActive('/app/work-seen-on') ? 'bg-primary/10 text-primary' : 'text-text/70 hover:bg-white/5 hover:text-text'"
+        >
+          <UIcon name="i-lucide-users" class="text-base shrink-0" />
+          Work Seen On
+        </NuxtLink>
+        <NuxtLink
+          v-if="user?.role === 'admin'"
+          to="/app/reviews"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          :class="isActive('/app/reviews') ? 'bg-primary/10 text-primary' : 'text-text/70 hover:bg-white/5 hover:text-text'"
+        >
+          <UIcon name="i-lucide-star" class="text-base shrink-0" />
+          Reviews
+        </NuxtLink>
+        <NuxtLink
+          v-if="user?.role === 'admin'"
+          to="/app/pricing"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          :class="isActive('/app/pricing') ? 'bg-primary/10 text-primary' : 'text-text/70 hover:bg-white/5 hover:text-text'"
+        >
+          <UIcon name="i-lucide-tag" class="text-base shrink-0" />
+          Pricing
         </NuxtLink>
       </nav>
 
