@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   const now = new Date().toISOString()
   const result = await db
     .prepare('INSERT INTO reviews (name, image_url, detail, counter, link, review, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(body.name, body.image_url, body.detail, body.counter ?? '', body.link ?? '#', body.review, now, now)
+    .bind(body.name, body.image_url, body.detail, body.counter || '', body.link || '#', body.review, now, now)
     .run()
 
   return { id: result.meta.last_row_id }

@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
 
   const result = await db
     .prepare('UPDATE reviews SET name = ?, image_url = ?, detail = ?, counter = ?, link = ?, review = ?, updated_at = ? WHERE id = ?')
-    .bind(body.name, body.image_url, body.detail, body.counter ?? '', body.link ?? '#', body.review, new Date().toISOString(), id)
+    .bind(body.name, body.image_url, body.detail, body.counter || '', body.link || '#', body.review, new Date().toISOString(), id)
     .run()
 
   if (result.meta.changes === 0) {

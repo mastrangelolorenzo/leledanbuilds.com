@@ -183,8 +183,11 @@ async function remove(post: Post) {
 }
 
 async function toggleFeature(post: Post, list: 'home' | 'portfolio', value: boolean) {
+  listError.value = ''
   try {
     await $fetch(`/api/posts/${post.id}/feature`, { method: 'PATCH', body: { list, value } })
+  } catch (e: unknown) {
+    listError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Could not update featured status.'
   } finally {
     await refresh() // also snaps the switch back to its true state if the server rejected it
   }
