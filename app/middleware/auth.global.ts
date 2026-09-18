@@ -5,7 +5,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (!isAppRoute || isPublicAppRoute) return
 
+  const user = useAuthUser()
   const { data: me } = await useFetch('/api/auth/me', { retry: false })
+  user.value = me.value ?? null
 
   if (!me.value) {
     return navigateTo('/app/login')
