@@ -1,0 +1,38 @@
+import { requireAdmin } from '../../utils/requireAdmin'
+
+interface UpdateBody {
+  name: string
+  image_url: string
+  detail: string
+  counter?: string
+  link?: string
+  review: string
+}
+
+export default defineEventHandler(async (event) => {
+  await requireAdmin(event)
+  const id = Number(getRouterParam(event, 'id'))
+  if (!Number.isInteger(id)) {
+    throw createError({ statusCode: 400, statusMessage: 'id must be a valid integer.' })
+  }
+
+  const body = await readBody<UpdateBody>(event)
+  if (!body.name || !body.image_url || !body.detail || !body.review) {
+    throw createError({ statusCode: 400, statusMessage: 'name, image_url, detail and review are required.' })
+  }
+
+  const db = event.context.cloudflare?.env?.DB
+  if (!db) {
+    throw createError({ statusCode: 503, statusMessage: 'Database unavailable' })
+  }
+
+  const result = await db
+    .prepare('UPDATE reviews SET name = ?, image_url = ?, detail = ?, counter = ?, link = ?, review = ?, updated_at = ? WHERE id = ?')
+    .bind(body.name, body.image_url, body.detail, body.counter ?? '', body.link ?? '#', body.review, new Date().toISOString(), id)
+    .run()
+
+  if (result.meta.changes === 0) {
+    throw createError({ statusCode: 404, statusMessage: 'Not found.' })
+  }
+  return { success: true }
+})
