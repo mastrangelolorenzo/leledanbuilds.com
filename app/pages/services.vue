@@ -16,10 +16,13 @@
         <p class="text-text/60 mt-3">Best Prices. Best Quality.</p>
       </div>
 
-      <div class="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 max-w-7xl mx-auto mt-14">
+      <p v-if="!plans?.length" class="text-text/50 text-center py-8">
+        Pricing plans are temporarily unavailable — check back soon.
+      </p>
+      <div v-else class="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 max-w-7xl mx-auto mt-14">
         <div
-          v-for="plan in plans"
-          :key="plan.title"
+          v-for="plan in plans ?? []"
+          :key="plan.id"
           class="group relative bg-background-secondary rounded-3xl p-4 md:p-6 py-8 md:py-10 flex flex-col overflow-hidden transition-transform duration-300"
           :class="plan.badge
             ? 'border-2 border-primary shadow-[0_0_20px_rgba(212,175,55,0.2)] sm:-translate-y-2 hover:-translate-y-3'
@@ -63,64 +66,15 @@
 
 
 <script lang="ts" setup>
-const plans = [
-    {
-      title: "Organics",
-      price: "50€+",
-      subtitle: "Per Build",
-      features: [
-        "High Quality",
-        "Advanced Texturing",
-        "2 Revision Rounds",
-        "1 Week Max Delivery"
-      ]
-    },
-    {
-      title: "Structures",
-      price: "70€+",
-      subtitle: "Per Build",
-      features: [
-        "High Quality",
-        "Advanced Details",
-        "2 Revision Rounds",
-        "1 Week Max Delivery"
-      ]
-    },
-    {
-      title: "Terraforming",
-      price: "200€+",
-      subtitle: "Per Build",
-      features: [
-        "High Quality",
-        "Advanced Realism",
-        "1 Revision Round",
-        "2 Weeks Max Delivery"
-      ]
-    },
-    {
-      title: "Skin Creation",
-      price: "20€+",
-      subtitle: "Per Skin",
-      features: [
-        "High Quality",
-        "Advanced Texturing",
-        "2 Revision Rounds",
-        "1 Week Max Delivery"
-      ]
-    },
-    {
-      title: "Custom Projects",
-      price: "Upon Request",
-      subtitle: "",
-      badge: "Popular",
-      features: [
-        "Unique Projects",
-        "Complete Servers",
-        "Spawns & Lobbies",
-        "Custom Timelines"
-      ]
-    }
-]
+interface Plan {
+  id: number
+  title: string
+  price: string
+  subtitle: string
+  features: string[]
+  badge: string | null
+}
+const { data: plans } = await useFetch<Plan[]>('/api/pricing');
 </script>
 
 <style>

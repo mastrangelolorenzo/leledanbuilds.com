@@ -50,16 +50,19 @@
 
     <div class="relative z-20 w-full pb-10 md:pb-14 flex flex-col items-center gap-5">
       <span class="text-foreground/60 text-xl md:text-2xl uppercase tracking-widest font-bold">Work seen on</span>
-      <UMarquee :overlay="false" :pauseOnHover="true" class="w-full py-2">
+      <p v-if="!workSeenOn?.length" class="text-foreground/50 text-center py-4">
+        Creators are temporarily unavailable — check back soon.
+      </p>
+      <UMarquee v-else :overlay="false" :pauseOnHover="true" class="w-full py-2">
         <a
-          v-for="creator in workSeenOn"
-          :key="creator.name"
+          v-for="creator in workSeenOn ?? []"
+          :key="creator.id"
           :href="creator.link"
           target="_blank"
           rel="noopener noreferrer"
           class="flex items-center gap-4 mx-5 hover:-translate-y-0.5 transition-all duration-300"
         >
-          <img :src="creator.image" :alt="creator.name" class="w-20 h-20 rounded-full object-cover border-2 border-secondary/70 shrink-0" />
+          <img :src="creator.image_url" :alt="creator.name" class="w-20 h-20 rounded-full object-cover border-2 border-secondary/70 shrink-0" />
           <span class="flex flex-col leading-tight whitespace-nowrap">
             <span class="text-foreground text-2xl font-bold">{{ creator.name }}</span>
             <span class="text-foreground/50 text-base">{{ creator.counter }}</span>
@@ -73,19 +76,14 @@
 <script lang="ts" setup>
 import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 
-const workSeenOn = [
-  { image: "/customers/zenith.webp", name: "Zenith", counter: "334k+ subs", link: "https://www.youtube.com/@zenithminecraft" },
-  { image: "/customers/divvy.webp", name: "Divvy", counter: "276k+ subs", link: "https://www.youtube.com/@divvyminecraft" },
-  { image: "/customers/cypro.webp", name: "Cypro", counter: "96.7k+ subs", link: "https://www.youtube.com/@cyproh" },
-  { image: "/customers/tigr8.webp", name: "Tigr8", counter: "145k+ subs", link: "https://www.youtube.com/@Tigr8" },
-  { image: "/customers/lilygumdrop.webp", name: "LilyGumdrop", counter: "3.02M+ subs", link: "https://www.youtube.com/@Lilygumdrop-rb" },
-  { image: "/customers/yeslucid.webp", name: "yeslucid", counter: "168k+ subs", link: "https://www.youtube.com/@yeslucid" },
-  { image: "/customers/onmod.webp", name: "OnMod", counter: "19.5k+ subs", link: "https://www.youtube.com/@OnMod" },
-  { image: "/customers/gabby16bit.webp", name: "Gabby16bit", counter: "3.52M+ subs", link: "https://www.youtube.com/gabby16bit" },
-  { image: "/customers/sharkliz.webp", name: "sharkliz", counter: "399k+ subs", link: "https://www.youtube.com/@Sharkilz" },
-  { image: "/customers/swizu.webp", name: "swizu", counter: "64.8k+ subs", link: "https://www.youtube.com/@swizu_" },
-  { image: "/customers/mythicalpingu.webp", name: "mythicalpingu", counter: "35.6k+ subs", link: "https://www.youtube.com/@MythicalPingu" },
-];
+interface Creator {
+  id: number
+  name: string
+  image_url: string
+  counter: string
+  link: string
+}
+const { data: workSeenOn } = await useFetch<Creator[]>('/api/work-seen-on');
 
 const bgImages = [
   "/background/1.webp",
