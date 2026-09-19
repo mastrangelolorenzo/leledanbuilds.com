@@ -7,3 +7,7 @@ binding = "DB"
 database_name = "leledan-builds"
 database_id = "9dbc22b2-8149-448d-a15d-2ec1ec011cd9"
 migrations_dir = "server/database/migrations"
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "leledan-uploads"
