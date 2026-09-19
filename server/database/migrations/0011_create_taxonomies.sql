@@ -16,6 +16,6 @@ CREATE TABLE categories (
 );
 CREATE UNIQUE INDEX idx_categories_name ON categories (name COLLATE NOCASE);
 
-INSERT INTO build_types (name) SELECT DISTINCT build_type FROM browse_items;
-INSERT INTO themes (name) SELECT DISTINCT theme FROM browse_items;
-INSERT INTO categories (name) SELECT DISTINCT category FROM browse_items;
+INSERT OR IGNORE INTO build_types (name) SELECT DISTINCT build_type FROM browse_items;
+INSERT OR IGNORE INTO themes (name) SELECT DISTINCT theme FROM browse_items;
+INSERT OR IGNORE INTO categories (name) SELECT DISTINCT category FROM browse_items;

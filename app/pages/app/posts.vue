@@ -104,14 +104,8 @@
             <UTextarea v-model="form.description" placeholder="Full description" :rows="6" class="w-full" />
           </UFormField>
           <div class="flex gap-6 mt-1">
-            <label class="flex items-center gap-2 text-sm text-text/80">
-              <UCheckbox v-model="form.featured_home" />
-              Featured on Home
-            </label>
-            <label class="flex items-center gap-2 text-sm text-text/80">
-              <UCheckbox v-model="form.featured_portfolio" />
-              Featured on Portfolio
-            </label>
+            <UCheckbox v-model="form.featured_home" label="Featured on Home" />
+            <UCheckbox v-model="form.featured_portfolio" label="Featured on Portfolio" />
           </div>
           <p v-if="formError" class="text-red-400 text-sm">{{ formError }}</p>
           <div class="flex gap-2 mt-2">
