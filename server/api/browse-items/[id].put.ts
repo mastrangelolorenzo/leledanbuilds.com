@@ -1,5 +1,6 @@
 import { requireAdmin } from '../../utils/requireAdmin'
 import { slugify, isUniqueConstraintError } from '../../utils/postValidation'
+import { ensureTaxonomyTerm } from '../../utils/taxonomy'
 
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Expert'] as const
 
@@ -37,13 +38,17 @@ export default defineEventHandler(async (event) => {
 
   const slug = slugify(body.title)
 
+  const buildType = await ensureTaxonomyTerm(db, 'build_types', body.build_type)
+  const theme = await ensureTaxonomyTerm(db, 'themes', body.theme)
+  const category = await ensureTaxonomyTerm(db, 'categories', body.category)
+
   try {
     const result = await db
       .prepare(
         `UPDATE browse_items SET slug = ?, title = ?, image_url = ?, price = ?, difficulty = ?, build_type = ?, theme = ?, category = ?, released = ?, description = ?, updated_at = ?
          WHERE id = ?`
       )
-      .bind(slug, body.title, body.image_url, body.price, body.difficulty, body.build_type, body.theme, body.category, body.released, body.description, new Date().toISOString(), id)
+      .bind(slug, body.title, body.image_url, body.price, body.difficulty, buildType, theme, category, body.released, body.description, new Date().toISOString(), id)
       .run()
 
     if (result.meta.changes === 0) {
