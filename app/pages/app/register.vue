@@ -5,7 +5,7 @@
       <UInput v-model="email" type="email" placeholder="Email" required />
       <UInput v-model="password" type="password" placeholder="Password (min. 8 characters)" required />
       <p v-if="error" class="text-red-400 text-sm">{{ error }}</p>
-      <p v-if="success" class="text-green-400 text-sm">Account created — you can log in now.</p>
+      <p v-if="success" class="text-green-400 text-sm">Account created! Check your email for a verification link before you can log in.</p>
       <UButton type="submit" :loading="loading" block>Register</UButton>
       <NuxtLink to="/app/login" class="text-sm text-text/60 hover:text-primary text-center">Already have an account? Log in</NuxtLink>
     </form>
