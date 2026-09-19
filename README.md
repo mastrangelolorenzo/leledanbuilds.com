@@ -254,6 +254,9 @@ reviews (`/app/reviews`), and pricing plans (`/app/pricing`) — same pattern
 as posts, each with its own D1 table and public read-only route
 (`/api/work-seen-on`, `/api/reviews`, `/api/pricing`).
 
+Also manages the `/browse` catalog (`/app/browse`) — same pattern, its own
+D1 table (`browse_items`) and public read-only route (`/api/browse-items`).
+
 ### Local dev
 
 1. Copy `.dev.vars.example` to `.dev.vars` and fill in `SESSION_SECRET`
