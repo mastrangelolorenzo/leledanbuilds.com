@@ -73,10 +73,18 @@
       <div class="bg-background-secondary border border-primary/30 rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
         <h2 class="text-lg font-bold text-primary mb-4">{{ editingId ? 'Edit post' : 'New post' }}</h2>
         <div class="flex flex-col gap-3">
-          <UInput v-model="form.title" placeholder="Title" />
-          <UInput v-model="form.image_url" placeholder="Image URL (e.g. /portfolio/45.webp)" />
-          <UInput v-model="form.teaser" placeholder="Teaser (one line)" />
-          <UTextarea v-model="form.description" placeholder="Full description" :rows="6" />
+          <UFormField label="Title">
+            <UInput v-model="form.title" placeholder="Title" class="w-full" />
+          </UFormField>
+          <UFormField label="Image">
+            <UInput v-model="form.image_url" placeholder="Image URL (e.g. /portfolio/45.webp)" class="w-full" />
+          </UFormField>
+          <UFormField label="Teaser">
+            <UInput v-model="form.teaser" placeholder="Teaser (one line)" class="w-full" />
+          </UFormField>
+          <UFormField label="Description">
+            <UTextarea v-model="form.description" placeholder="Full description" :rows="6" class="w-full" />
+          </UFormField>
           <div class="flex gap-6 mt-1">
             <label class="flex items-center gap-2 text-sm text-text/80">
               <UCheckbox v-model="form.featured_home" />

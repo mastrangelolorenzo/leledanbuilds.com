@@ -63,10 +63,18 @@
       <div class="bg-background-secondary border border-primary/30 rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
         <h2 class="text-lg font-bold text-primary mb-4">{{ editingId ? 'Edit entry' : 'New entry' }}</h2>
         <div class="flex flex-col gap-3">
-          <UInput v-model="form.name" placeholder="Name" />
-          <UInput v-model="form.image_url" placeholder="Image URL" />
-          <UInput v-model="form.counter" placeholder="Counter (e.g. 1.2k)" />
-          <UInput v-model="form.link" placeholder="Link (e.g. https://...)" />
+          <UFormField label="Name">
+            <UInput v-model="form.name" placeholder="Name" class="w-full" />
+          </UFormField>
+          <UFormField label="Image">
+            <UInput v-model="form.image_url" placeholder="Image URL" class="w-full" />
+          </UFormField>
+          <UFormField label="Subscriber count">
+            <UInput v-model="form.counter" placeholder="e.g. 1.2k" class="w-full" />
+          </UFormField>
+          <UFormField label="Link">
+            <UInput v-model="form.link" placeholder="e.g. https://..." class="w-full" />
+          </UFormField>
           <p v-if="formError" class="text-red-400 text-sm">{{ formError }}</p>
           <div class="flex gap-2 mt-2">
             <UButton :loading="saving" @click="save">Save</UButton>

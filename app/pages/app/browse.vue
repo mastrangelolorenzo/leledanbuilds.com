@@ -64,15 +64,33 @@
       <div class="bg-background-secondary border border-primary/30 rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
         <h2 class="text-lg font-bold text-primary mb-4">{{ editingId ? 'Edit browse item' : 'New browse item' }}</h2>
         <div class="flex flex-col gap-3">
-          <UInput v-model="form.title" placeholder="Title" />
-          <UInput v-model="form.image_url" placeholder="Image URL (e.g. /portfolio/45.webp)" />
-          <UInput v-model="form.price" type="number" placeholder="Price" />
-          <USelect v-model="form.difficulty" :items="DIFFICULTIES" placeholder="Difficulty" />
-          <UInput v-model="form.build_type" placeholder="Build type (e.g. House, Map, Vehicle, Statue)" />
-          <UInput v-model="form.theme" placeholder="Theme (e.g. Modern, Fantasy, Ancient)" />
-          <UInput v-model="form.category" placeholder="Category (e.g. Structures, Terraforming, Organic)" />
-          <UInput v-model="form.released" type="date" placeholder="Released" />
-          <UTextarea v-model="form.description" placeholder="Description" :rows="6" />
+          <UFormField label="Title">
+            <UInput v-model="form.title" placeholder="e.g. Modern Glass Villa" class="w-full" />
+          </UFormField>
+          <UFormField label="Image">
+            <UInput v-model="form.image_url" placeholder="Image URL (e.g. /portfolio/45.webp)" class="w-full" />
+          </UFormField>
+          <UFormField label="Price (€)">
+            <UInput v-model="form.price" type="number" placeholder="Price" class="w-full" />
+          </UFormField>
+          <UFormField label="Difficulty">
+            <USelect v-model="form.difficulty" :items="DIFFICULTIES" placeholder="Difficulty" class="w-full" />
+          </UFormField>
+          <UFormField label="Build type">
+            <UInput v-model="form.build_type" placeholder="e.g. House, Map, Vehicle, Statue" class="w-full" />
+          </UFormField>
+          <UFormField label="Theme">
+            <UInput v-model="form.theme" placeholder="e.g. Modern, Fantasy, Ancient" class="w-full" />
+          </UFormField>
+          <UFormField label="Category">
+            <UInput v-model="form.category" placeholder="e.g. Structures, Terraforming, Organic" class="w-full" />
+          </UFormField>
+          <UFormField label="Release date">
+            <UInput v-model="form.released" type="date" placeholder="Released" class="w-full" />
+          </UFormField>
+          <UFormField label="Description">
+            <UTextarea v-model="form.description" placeholder="Description" :rows="6" class="w-full" />
+          </UFormField>
           <p v-if="formError" class="text-red-400 text-sm">{{ formError }}</p>
           <div class="flex gap-2 mt-2">
             <UButton :loading="saving" @click="save">Save</UButton>

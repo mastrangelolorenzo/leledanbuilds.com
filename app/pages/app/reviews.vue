@@ -58,12 +58,24 @@
       <div class="bg-background-secondary border border-primary/30 rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
         <h2 class="text-lg font-bold text-primary mb-4">{{ editingId ? 'Edit review' : 'New review' }}</h2>
         <div class="flex flex-col gap-3">
-          <UInput v-model="form.name" placeholder="Name" />
-          <UInput v-model="form.image_url" placeholder="Image URL" />
-          <UInput v-model="form.detail" placeholder="Detail (e.g. role, company)" />
-          <UInput v-model="form.counter" placeholder="Counter (optional)" />
-          <UInput v-model="form.link" placeholder="Link (optional)" />
-          <UTextarea v-model="form.review" placeholder="Review text" :rows="5" />
+          <UFormField label="Name">
+            <UInput v-model="form.name" placeholder="Name" class="w-full" />
+          </UFormField>
+          <UFormField label="Image">
+            <UInput v-model="form.image_url" placeholder="Image URL" class="w-full" />
+          </UFormField>
+          <UFormField label="Detail (e.g. YouTuber, Server)">
+            <UInput v-model="form.detail" placeholder="e.g. role, company" class="w-full" />
+          </UFormField>
+          <UFormField label="Subscriber count">
+            <UInput v-model="form.counter" placeholder="Optional" class="w-full" />
+          </UFormField>
+          <UFormField label="Link">
+            <UInput v-model="form.link" placeholder="Optional" class="w-full" />
+          </UFormField>
+          <UFormField label="Review text">
+            <UTextarea v-model="form.review" placeholder="Review text" :rows="5" class="w-full" />
+          </UFormField>
           <p v-if="formError" class="text-red-400 text-sm">{{ formError }}</p>
           <div class="flex gap-2 mt-2">
             <UButton :loading="saving" @click="save">Save</UButton>

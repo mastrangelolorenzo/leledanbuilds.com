@@ -63,11 +63,21 @@
       <div class="bg-background-secondary border border-primary/30 rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
         <h2 class="text-lg font-bold text-primary mb-4">{{ editingId ? 'Edit plan' : 'New plan' }}</h2>
         <div class="flex flex-col gap-3">
-          <UInput v-model="form.title" placeholder="Title" />
-          <UInput v-model="form.price" placeholder="Price (e.g. $49/mo)" />
-          <UInput v-model="form.subtitle" placeholder="Subtitle" />
-          <UInput v-model="form.badge" placeholder="Badge (optional, e.g. Most Popular)" />
-          <UTextarea v-model="featuresText" placeholder="Features, one per line" :rows="6" />
+          <UFormField label="Plan title">
+            <UInput v-model="form.title" placeholder="Title" class="w-full" />
+          </UFormField>
+          <UFormField label="Price">
+            <UInput v-model="form.price" placeholder="e.g. $49/mo" class="w-full" />
+          </UFormField>
+          <UFormField label="Subtitle">
+            <UInput v-model="form.subtitle" placeholder="Subtitle" class="w-full" />
+          </UFormField>
+          <UFormField label="Badge (optional)">
+            <UInput v-model="form.badge" placeholder="e.g. Most Popular" class="w-full" />
+          </UFormField>
+          <UFormField label="Features (one per line)">
+            <UTextarea v-model="featuresText" placeholder="Features, one per line" :rows="6" class="w-full" />
+          </UFormField>
           <p v-if="formError" class="text-red-400 text-sm">{{ formError }}</p>
           <div class="flex gap-2 mt-2">
             <UButton :loading="saving" @click="save">Save</UButton>
