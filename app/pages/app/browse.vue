@@ -95,13 +95,34 @@
             <USelect v-model="form.difficulty" :items="DIFFICULTIES" placeholder="Difficulty" class="w-full" />
           </UFormField>
           <UFormField label="Build type">
-            <UInput v-model="form.build_type" placeholder="e.g. House, Map, Vehicle, Statue" class="w-full" />
+            <USelectMenu
+              v-model="form.build_type"
+              :items="buildTypeOptions ?? []"
+              create-item
+              placeholder="Select or type to create a new build type"
+              class="w-full"
+              @create="(item: string) => { onCreateTaxonomyTerm(item, buildTypeOptions); form.build_type = item }"
+            />
           </UFormField>
           <UFormField label="Theme">
-            <UInput v-model="form.theme" placeholder="e.g. Modern, Fantasy, Ancient" class="w-full" />
+            <USelectMenu
+              v-model="form.theme"
+              :items="themeOptions ?? []"
+              create-item
+              placeholder="Select or type to create a new theme"
+              class="w-full"
+              @create="(item: string) => { onCreateTaxonomyTerm(item, themeOptions); form.theme = item }"
+            />
           </UFormField>
           <UFormField label="Category">
-            <UInput v-model="form.category" placeholder="e.g. Structures, Terraforming, Organic" class="w-full" />
+            <USelectMenu
+              v-model="form.category"
+              :items="categoryOptions ?? []"
+              create-item
+              placeholder="Select or type to create a new category"
+              class="w-full"
+              @create="(item: string) => { onCreateTaxonomyTerm(item, categoryOptions); form.category = item }"
+            />
           </UFormField>
           <UFormField label="Release date">
             <UInput v-model="form.released" type="date" placeholder="Released" class="w-full" />
@@ -140,6 +161,19 @@ interface BrowseItem {
 }
 
 const { data: items, refresh } = await useFetch<BrowseItem[]>('/api/browse-items')
+const { data: buildTypeOptions } = await useFetch<string[]>('/api/admin/build-types')
+const { data: themeOptions } = await useFetch<string[]>('/api/admin/themes')
+const { data: categoryOptions } = await useFetch<string[]>('/api/admin/categories')
+
+function onCreateTaxonomyTerm(name: string, options: Ref<string[] | null>) {
+  // Optimistically add it locally so it's immediately selectable and shows
+  // in the dropdown; the actual DB row gets created for real when the item
+  // form is submitted (server/api/browse-items' create/update routes call
+  // ensureTaxonomyTerm, which inserts it if it's genuinely new — Task 3).
+  if (options.value && !options.value.includes(name)) {
+    options.value = [...options.value, name].sort()
+  }
+}
 
 const editing = ref(false)
 const saving = ref(false)
