@@ -62,7 +62,25 @@
             <UInput v-model="form.name" placeholder="Name" class="w-full" />
           </UFormField>
           <UFormField label="Image">
-            <UInput v-model="form.image_url" placeholder="Image URL" class="w-full" />
+            <div class="flex items-center gap-4">
+              <img
+                v-if="form.image_url"
+                :src="form.image_url"
+                alt="Current image"
+                class="w-16 h-16 rounded-lg object-cover border border-white/10 shrink-0"
+              />
+              <UFileUpload
+                v-model="selectedImageFile"
+                accept="image/webp,image/png,image/jpeg,image/gif"
+                :disabled="uploadingImage"
+                icon="i-lucide-image-up"
+                label="Click or drop an image to upload"
+                class="flex-1"
+                @update:model-value="onImageFileSelected"
+              />
+            </div>
+            <p v-if="uploadingImage" class="text-text/50 text-xs mt-1">Uploading…</p>
+            <p v-if="uploadError" class="text-red-400 text-xs mt-1">{{ uploadError }}</p>
           </UFormField>
           <UFormField label="Detail (e.g. YouTuber, Server)">
             <UInput v-model="form.detail" placeholder="e.g. role, company" class="w-full" />
@@ -116,6 +134,27 @@ const form = reactive({
   review: '',
 })
 
+const selectedImageFile = ref<File | null>(null)
+const uploadingImage = ref(false)
+const uploadError = ref('')
+
+async function onImageFileSelected(file: File | null) {
+  if (!file) return
+  uploadingImage.value = true
+  uploadError.value = ''
+  try {
+    const body = new FormData()
+    body.append('file', file)
+    const res = await $fetch<{ url: string }>('/api/admin/upload', { method: 'POST', body })
+    form.image_url = res.url
+  } catch (e: unknown) {
+    uploadError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Upload failed.'
+  } finally {
+    uploadingImage.value = false
+    selectedImageFile.value = null
+  }
+}
+
 function startCreate() {
   editingId.value = null
   form.name = ''
@@ -125,6 +164,8 @@ function startCreate() {
   form.link = ''
   form.review = ''
   formError.value = ''
+  selectedImageFile.value = null
+  uploadError.value = ''
   editing.value = true
 }
 
@@ -137,6 +178,8 @@ function startEdit(item: Review) {
   form.link = item.link
   form.review = item.review
   formError.value = ''
+  selectedImageFile.value = null
+  uploadError.value = ''
   editing.value = true
 }
 
