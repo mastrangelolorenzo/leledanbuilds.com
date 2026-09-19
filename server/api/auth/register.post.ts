@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
   const verifyUrl = `${origin}/api/auth/verify?token=${token}`
 
   const recentCount = await db
-    .prepare("SELECT COUNT(*) as count FROM email_verification_tokens WHERE created_at > datetime('now', '-60 seconds')")
+    .prepare("SELECT COUNT(*) as count FROM email_verification_tokens WHERE created_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-60 seconds')")
     .first<{ count: number }>()
 
   if ((recentCount?.count ?? 0) < 10) {
