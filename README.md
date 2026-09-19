@@ -273,6 +273,34 @@ deploy that includes the `users` table. Set `SESSION_SECRET` as a
 Cloudflare Pages secret (not in any committed file):
 `npx wrangler pages secret put SESSION_SECRET`.
 
+### Email verification
+
+New `role='user'` registrations must verify their email before logging in.
+Verification emails are sent via real Gmail SMTP over a raw TCP socket
+(`server/lib/smtp.ts`, using Cloudflare's `cloudflare:sockets` API — this
+is why it's hand-rolled instead of using `nodemailer`, which needs Node's
+`net`/`tls` and doesn't run in Workers). Requires `SMTP_USER`/
+`SMTP_PASSWORD` (a Gmail address + an
+[app password](https://myaccount.google.com/apppasswords), not the account
+password) as env vars / Cloudflare secrets — see `.dev.vars.example`.
+
+`PUBLIC_ORIGIN` (optional) sets the domain used in verification links —
+set it explicitly in production (e.g. `https://leledanbuilds.com`) so the
+link's domain can never be influenced by a client-supplied `Host` header.
+Local dev falls back to the request's own origin when unset, so it's not
+required there.
+
+**`npm run dev` cannot exercise SMTP-dependent routes** — `cloudflare:sockets`
+only exists in the real Cloudflare Workers runtime (`workerd`), not in
+`nitro-cloudflare-dev`'s Node-based local dev server (an alias in
+`nuxt.config.ts` keeps this from breaking *other*, non-email routes under
+`npm run dev`, but the email-sending routes themselves still can't run
+there). To test registration/verification/resend locally end to end, build
+and run the real Workers runtime instead:
+```bash
+npm run build && npx wrangler pages dev dist
+```
+
 ## 📄 License
 
 Private project - All rights reserved.
