@@ -1,5 +1,5 @@
 import { generateVerificationToken } from '../../utils/verificationToken'
-import { sendMail } from '../../utils/smtp'
+import { sendMail } from '../../lib/smtp'
 import { getPublicOrigin } from '../../utils/env'
 
 interface UserRow {

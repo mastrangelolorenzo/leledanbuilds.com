@@ -3,7 +3,7 @@
 // `cloudflare:sockets` only exists inside the Cloudflare Workers runtime
 // (and is normally polyfilled during `nuxt dev`/`nuxt build` by the
 // `nitro-cloudflare-dev` module). Plain Vitest runs in Node and has no such
-// module, so importing it at the top of `server/utils/smtp.ts` would make
+// module, so importing it at the top of `server/lib/smtp.ts` would make
 // the whole file - including its pure, unit-testable helpers
 // (`isValidEmailForHeader`, `buildMessage`) - fail to load.
 //

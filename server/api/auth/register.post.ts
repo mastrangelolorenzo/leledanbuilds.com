@@ -1,7 +1,7 @@
 import { hashPassword } from '../../utils/password'
 import { isUniqueConstraintError } from '../../utils/postValidation'
 import { generateVerificationToken } from '../../utils/verificationToken'
-import { sendMail, isValidEmailForHeader } from '../../utils/smtp'
+import { sendMail, isValidEmailForHeader } from '../../lib/smtp'
 import { getPublicOrigin } from '../../utils/env'
 
 export default defineEventHandler(async (event) => {
