@@ -28,7 +28,7 @@ async function hash(password, saltHex) {
 
 const passwordHash = await hash(password, salt)
 
-const sql = `INSERT INTO users (email, password_hash, salt, role) VALUES ('${email.replace(/'/g, "''")}', '${passwordHash}', '${salt}', 'admin');`
+const sql = `INSERT INTO users (email, password_hash, salt, role, email_verified) VALUES ('${email.replace(/'/g, "''")}', '${passwordHash}', '${salt}', 'admin', 1);`
 
 const sqlFile = join(tmpdir(), `seed-admin-${Date.now()}.sql`)
 try {

@@ -8,5 +8,5 @@ export function getSessionSecret(event: Parameters<typeof defineEventHandler>[0]
 
 export function getPublicOrigin(event: Parameters<typeof defineEventHandler>[0] extends (e: infer E) => unknown ? E : never): string {
   const configured = event.context.cloudflare?.env?.PUBLIC_ORIGIN
-  return configured || getRequestURL(event).origin
+  return configured ? configured.replace(/\/+$/, '') : getRequestURL(event).origin
 }

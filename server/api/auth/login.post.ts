@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Invalid email or password.' })
   }
 
-  if (!user.email_verified) {
+  if (user.role !== 'admin' && !user.email_verified) {
     throw createError({ statusCode: 403, statusMessage: 'Please verify your email before logging in.' })
   }
 

@@ -44,18 +44,25 @@ export default defineEventHandler(async (event) => {
   const origin = getPublicOrigin(event)
   const verifyUrl = `${origin}/api/auth/verify?token=${token}`
 
-  try {
-    await sendMail(event.context.cloudflare.env, {
-      to: email,
-      subject: 'Verify your leledanbuilds account',
-      text: `Welcome! Click the link below to verify your email and activate your account:\n\n${verifyUrl}\n\nThis link expires in 24 hours. If you didn't create this account, you can ignore this email.`,
-    })
-  } catch (err) {
-    // Registration itself already succeeded (the row exists) — a delivery
-    // failure shouldn't look like registration failed. Surface it as a
-    // concern via DONE_WITH_CONCERNS in your report; the user can still use
-    // resend-verification once SMTP is working.
-    console.error('Failed to send verification email:', err)
+  const recentCount = await db
+    .prepare("SELECT COUNT(*) as count FROM email_verification_tokens WHERE created_at > datetime('now', '-60 seconds')")
+    .first<{ count: number }>()
+
+  if ((recentCount?.count ?? 0) < 10) {
+    try {
+      await sendMail(event.context.cloudflare.env, {
+        to: email,
+        subject: 'Verify your leledanbuilds account',
+        text: `Welcome! Click the link below to verify your email and activate your account:\n\n${verifyUrl}\n\nThis link expires in 24 hours. If you didn't create this account, you can ignore this email.`,
+      })
+    } catch (err) {
+      // Registration itself already succeeded (the row exists) — a delivery
+      // failure shouldn't look like registration failed; the user can still
+      // use resend-verification once SMTP is working.
+      console.error('Failed to send verification email:', err)
+    }
+  } else {
+    console.error('Skipped sending verification email due to global rate limit:', email)
   }
 
   return { success: true, message: 'Account created. Check your email to verify your account before logging in.' }

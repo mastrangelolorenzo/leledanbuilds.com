@@ -2,6 +2,8 @@
   <div class="min-h-screen flex items-center justify-center px-4">
     <form class="w-full max-w-sm flex flex-col gap-4 bg-background-secondary p-8 rounded-2xl border border-white/10" @submit.prevent="submit">
       <h1 class="text-2xl font-bold text-primary">Log in</h1>
+      <p v-if="verifiedBanner" class="text-green-400 text-sm text-center">Email verified! You can now log in.</p>
+      <p v-if="verifyErrorBanner" class="text-red-400 text-sm text-center">That verification link is invalid or has expired. Register again or use "Resend verification email" below after attempting to log in.</p>
       <UInput v-model="email" type="email" placeholder="Email" required />
       <UInput v-model="password" type="password" placeholder="Password" required />
       <p v-if="error" class="text-red-400 text-sm">{{ error }}</p>
@@ -22,6 +24,10 @@
 </template>
 
 <script lang="ts" setup>
+const route = useRoute()
+const verifiedBanner = route.query.verified === '1'
+const verifyErrorBanner = route.query.verify_error === '1'
+
 const email = ref('')
 const password = ref('')
 const error = ref('')
