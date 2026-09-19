@@ -7,6 +7,7 @@ interface UserRow {
   password_hash: string
   salt: string
   role: 'admin' | 'user'
+  email_verified: number
 }
 
 export default defineEventHandler(async (event) => {
@@ -24,12 +25,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = await db
-    .prepare('SELECT id, password_hash, salt, role FROM users WHERE email = ?')
+    .prepare('SELECT id, password_hash, salt, role, email_verified FROM users WHERE email = ?')
     .bind(email)
     .first<UserRow>()
 
   if (!user || !(await verifyPassword(password, user.password_hash, user.salt))) {
     throw createError({ statusCode: 401, statusMessage: 'Invalid email or password.' })
+  }
+
+  if (!user.email_verified) {
+    throw createError({ statusCode: 403, statusMessage: 'Please verify your email before logging in.' })
   }
 
   const secret = getSessionSecret(event)
