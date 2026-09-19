@@ -257,6 +257,26 @@ as posts, each with its own D1 table and public read-only route
 Also manages the `/browse` catalog (`/app/browse`) — same pattern, its own
 D1 table (`browse_items`) and public read-only route (`/api/browse-items`).
 
+### Image uploads
+
+Dashboard forms with an image field (posts, work-seen-on, reviews, browse
+items) upload real files to Cloudflare R2 (`server/api/admin/upload.post.ts`,
+bucket `leledan-uploads`, binding `UPLOADS` in `wrangler.toml`) and serve
+them back through this same Worker at `/uploads/:key`
+(`server/routes/uploads/[key].get.ts`) — no second domain or R2 public
+bucket setup needed. Like the SMTP feature, R2 is only genuinely available
+under the real Workers runtime, so testing uploads locally needs
+`npm run build && npx wrangler pages dev dist`, not plain `npm run dev`.
+
+### Managed taxonomies (browse items)
+
+`browse_items`' Build Type, Theme, and Category fields are selected from a
+managed list (`build_types`/`themes`/`categories` D1 tables,
+case-insensitive-unique) rather than free text, so a typo can't silently
+create a duplicate/garbage value. Creating a genuinely new value is still
+possible — it's a deliberate action in the dashboard's select field, not an
+accident.
+
 ### Local dev
 
 1. Copy `.dev.vars.example` to `.dev.vars` and fill in `SESSION_SECRET`
