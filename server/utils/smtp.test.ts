@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { isValidEmailForHeader, buildMessage } from './smtp'
+import { isValidEmailForHeader, buildMessage, readLine, readResponse } from './smtp'
+
+function makeReader(chunks: string[]): ReadableStreamDefaultReader<Uint8Array> {
+  const encoder = new TextEncoder()
+  let i = 0
+  return {
+    read: async () => {
+      if (i >= chunks.length) return { done: true, value: undefined }
+      return { done: false, value: encoder.encode(chunks[i++]) }
+    },
+    releaseLock: () => {},
+    cancel: async () => {},
+    closed: Promise.resolve(undefined),
+  } as unknown as ReadableStreamDefaultReader<Uint8Array>
+}
 
 describe('isValidEmailForHeader', () => {
   it('accepts a normal email address', () => {
@@ -38,5 +52,45 @@ describe('buildMessage', () => {
 
   it('throws if the "to" address fails isValidEmailForHeader', () => {
     expect(() => buildMessage({ from: 'a@example.com', to: 'bad\r\naddress', subject: 'Hi', text: 'body' })).toThrow()
+  })
+})
+
+describe('readLine', () => {
+  it('reads a single complete line arriving in one chunk', async () => {
+    const reader = makeReader(['220 greeting\r\n'])
+    const buffer = { pending: '' }
+
+    const line = await readLine(reader, buffer)
+
+    expect(line).toBe('220 greeting')
+  })
+
+  it('reassembles a line whose bytes arrive split across multiple chunks', async () => {
+    const reader = makeReader(['220 gre', 'eti', 'ng\r\n'])
+    const buffer = { pending: '' }
+
+    const line = await readLine(reader, buffer)
+
+    expect(line).toBe('220 greeting')
+  })
+})
+
+describe('readResponse', () => {
+  it('handles a single-line response', async () => {
+    const reader = makeReader(['220 greeting\r\n'])
+    const buffer = { pending: '' }
+
+    const response = await readResponse(reader, buffer)
+
+    expect(response).toEqual({ code: 220, message: 'greeting' })
+  })
+
+  it('handles a multi-line response, keeping only the final line\'s message', async () => {
+    const reader = makeReader(['250-first\r\n250-second\r\n250 third\r\n'])
+    const buffer = { pending: '' }
+
+    const response = await readResponse(reader, buffer)
+
+    expect(response).toEqual({ code: 250, message: 'third' })
   })
 })

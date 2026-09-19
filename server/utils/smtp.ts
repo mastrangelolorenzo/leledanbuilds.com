@@ -29,8 +29,10 @@ export function buildMessage(opts: { from: string, to: string, subject: string, 
   const subject = stripCrlf(opts.subject)
   // Body lines are dot-stuffed per RFC 5321: a line starting with "." gets
   // an extra "." prepended, so it's never mistaken for the end-of-DATA marker.
+  // Split on an optional \r so callers passing \r\n-delimited text don't end
+  // up with a stray bare \r glued onto the end of every line.
   const body = opts.text
-    .split('\n')
+    .split(/\r?\n/)
     .map(line => (line.startsWith('.') ? `.${line}` : line))
     .join('\r\n')
 
@@ -45,11 +47,15 @@ export function buildMessage(opts: { from: string, to: string, subject: string, 
   ].join('')
 }
 
-async function readLine(reader: ReadableStreamDefaultReader<Uint8Array>, buffer: { pending: string }): Promise<string> {
+export async function readLine(reader: ReadableStreamDefaultReader<Uint8Array>, buffer: { pending: string }): Promise<string> {
+  // A single TextDecoder instance is reused (with { stream: true }) across
+  // reads so a multi-byte UTF-8 character split across two TCP chunks is
+  // reassembled correctly instead of producing replacement characters.
+  const decoder = new TextDecoder()
   while (!buffer.pending.includes('\n')) {
     const { value, done } = await reader.read()
     if (done) throw new Error('SMTP connection closed unexpectedly.')
-    buffer.pending += new TextDecoder().decode(value)
+    buffer.pending += decoder.decode(value, { stream: true })
   }
   const index = buffer.pending.indexOf('\n')
   const line = buffer.pending.slice(0, index)
@@ -57,7 +63,7 @@ async function readLine(reader: ReadableStreamDefaultReader<Uint8Array>, buffer:
   return line.replace(/\r$/, '')
 }
 
-async function readResponse(reader: ReadableStreamDefaultReader<Uint8Array>, buffer: { pending: string }): Promise<{ code: number, message: string }> {
+export async function readResponse(reader: ReadableStreamDefaultReader<Uint8Array>, buffer: { pending: string }): Promise<{ code: number, message: string }> {
   let line = await readLine(reader, buffer)
   // Multi-line responses use "250-..." for all but the last line, "250 ..." for the last.
   while (line[3] === '-') {
@@ -89,7 +95,7 @@ export async function sendMail(
     await writer.write(encoder.encode(line))
   }
 
-  async function expect(codePrefix: string, context: string) {
+  async function expectCode(codePrefix: string, context: string) {
     const { code, message: msg } = await readResponse(reader, buffer)
     if (!String(code).startsWith(codePrefix)) {
       throw new Error(`SMTP error during ${context}: ${code} ${msg}`)
@@ -97,31 +103,31 @@ export async function sendMail(
   }
 
   try {
-    await expect('220', 'greeting')
+    await expectCode('220', 'greeting')
 
     await send(`EHLO leledanbuilds.com\r\n`)
-    await expect('250', 'EHLO')
+    await expectCode('250', 'EHLO')
 
     await send(`AUTH LOGIN\r\n`)
-    await expect('334', 'AUTH LOGIN prompt')
+    await expectCode('334', 'AUTH LOGIN prompt')
 
     await send(`${btoa(user)}\r\n`)
-    await expect('334', 'username')
+    await expectCode('334', 'username')
 
     await send(`${btoa(password)}\r\n`)
-    await expect('235', 'authentication')
+    await expectCode('235', 'authentication')
 
     await send(`MAIL FROM:<${user}>\r\n`)
-    await expect('250', 'MAIL FROM')
+    await expectCode('250', 'MAIL FROM')
 
     await send(`RCPT TO:<${opts.to}>\r\n`)
-    await expect('250', 'RCPT TO')
+    await expectCode('250', 'RCPT TO')
 
     await send(`DATA\r\n`)
-    await expect('354', 'DATA')
+    await expectCode('354', 'DATA')
 
     await send(`${message}\r\n.\r\n`)
-    await expect('250', 'message body')
+    await expectCode('250', 'message body')
 
     await send(`QUIT\r\n`)
   } finally {
