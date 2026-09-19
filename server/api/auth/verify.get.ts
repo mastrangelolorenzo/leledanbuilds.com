@@ -1,4 +1,5 @@
 import { hashToken } from '../../utils/verificationToken'
+import { getPublicOrigin } from '../../utils/env'
 
 interface TokenRow {
   user_id: number
@@ -8,7 +9,7 @@ interface TokenRow {
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const token = typeof query.token === 'string' ? query.token : ''
-  const origin = getRequestURL(event).origin
+  const origin = getPublicOrigin(event)
 
   if (!token) {
     return sendRedirect(event, `${origin}/app/login?verify_error=1`)
@@ -29,8 +30,10 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, `${origin}/app/login?verify_error=1`)
   }
 
-  await db.prepare('UPDATE users SET email_verified = 1 WHERE id = ?').bind(row.user_id).run()
-  await db.prepare('DELETE FROM email_verification_tokens WHERE token_hash = ?').bind(tokenHash).run()
+  await db.batch([
+    db.prepare('UPDATE users SET email_verified = 1 WHERE id = ?').bind(row.user_id),
+    db.prepare('DELETE FROM email_verification_tokens WHERE token_hash = ?').bind(tokenHash),
+  ])
 
   return sendRedirect(event, `${origin}/app/login?verified=1`)
 })

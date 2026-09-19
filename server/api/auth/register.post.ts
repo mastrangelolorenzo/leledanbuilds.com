@@ -1,14 +1,15 @@
 import { hashPassword } from '../../utils/password'
 import { isUniqueConstraintError } from '../../utils/postValidation'
 import { generateVerificationToken } from '../../utils/verificationToken'
-import { sendMail } from '../../utils/smtp'
+import { sendMail, isValidEmailForHeader } from '../../utils/smtp'
+import { getPublicOrigin } from '../../utils/env'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ email?: string, password?: string }>(event)
   const email = body.email?.trim().toLowerCase()
   const password = body.password
 
-  if (!email || !email.includes('@') || !password || password.length < 8) {
+  if (!email || !isValidEmailForHeader(email) || !password || password.length < 8) {
     throw createError({ statusCode: 400, statusMessage: 'Valid email and a password of 8+ characters are required.' })
   }
 
@@ -40,7 +41,7 @@ export default defineEventHandler(async (event) => {
     .bind(tokenHash, userId, expiresAt)
     .run()
 
-  const origin = getRequestURL(event).origin
+  const origin = getPublicOrigin(event)
   const verifyUrl = `${origin}/api/auth/verify?token=${token}`
 
   try {

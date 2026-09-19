@@ -1,5 +1,6 @@
 import { generateVerificationToken } from '../../utils/verificationToken'
 import { sendMail } from '../../utils/smtp'
+import { getPublicOrigin } from '../../utils/env'
 
 interface UserRow {
   id: number
@@ -32,16 +33,23 @@ export default defineEventHandler(async (event) => {
     return genericResponse
   }
 
-  await db.prepare('DELETE FROM email_verification_tokens WHERE user_id = ?').bind(user.id).run()
+  const existingToken = await db
+    .prepare('SELECT created_at FROM email_verification_tokens WHERE user_id = ? ORDER BY created_at DESC LIMIT 1')
+    .bind(user.id)
+    .first<{ created_at: string }>()
+
+  if (existingToken && Date.now() - new Date(existingToken.created_at).getTime() < 60_000) {
+    return genericResponse
+  }
 
   const { token, tokenHash } = await generateVerificationToken()
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-  await db
-    .prepare('INSERT INTO email_verification_tokens (token_hash, user_id, expires_at) VALUES (?, ?, ?)')
-    .bind(tokenHash, user.id, expiresAt)
-    .run()
+  await db.batch([
+    db.prepare('DELETE FROM email_verification_tokens WHERE user_id = ?').bind(user.id),
+    db.prepare('INSERT INTO email_verification_tokens (token_hash, user_id, expires_at) VALUES (?, ?, ?)').bind(tokenHash, user.id, expiresAt),
+  ])
 
-  const origin = getRequestURL(event).origin
+  const origin = getPublicOrigin(event)
   const verifyUrl = `${origin}/api/auth/verify?token=${token}`
 
   try {
