@@ -13,7 +13,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
           <img
-            :src="build.image"
+            :src="build.image_url"
             :alt="build.title"
             class="w-full aspect-square object-cover rounded-2xl border border-white/10"
             draggable="false"
@@ -25,7 +25,7 @@
             </h1>
 
             <div class="flex flex-wrap items-center gap-2 mb-5">
-              <span class="px-3 py-1 rounded-full border border-primary/40 text-primary text-xs font-semibold uppercase tracking-wide">{{ build.buildType }}</span>
+              <span class="px-3 py-1 rounded-full border border-primary/40 text-primary text-xs font-semibold uppercase tracking-wide">{{ build.build_type }}</span>
               <span class="px-3 py-1 rounded-full border border-white/20 text-text/70 text-xs font-semibold uppercase tracking-wide">{{ build.theme }}</span>
               <span class="px-3 py-1 rounded-full border border-white/20 text-text/70 text-xs font-semibold uppercase tracking-wide">{{ build.category }}</span>
             </div>
@@ -91,7 +91,7 @@
               class="group relative bg-background-secondary border border-white/10 rounded-2xl overflow-hidden flex flex-col transition-transform duration-300 hover:-translate-y-1"
             >
               <img
-                :src="item.image"
+                :src="item.image_url"
                 :alt="item.title"
                 class="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500"
                 draggable="false"
@@ -116,23 +116,41 @@
 <script lang="ts" setup>
 import { computed } from "vue";
 import { useRoute } from "#app";
-import { products, difficultyLevels } from "~/data/products";
+
+interface BrowseItem {
+  id: number
+  slug: string
+  title: string
+  image_url: string
+  price: number
+  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Expert'
+  build_type: string
+  theme: string
+  category: string
+  released: string
+  description: string
+}
+
+const difficultyLevels: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3, Expert: 4 }
+
+const { data: fetchedProducts } = await useFetch<BrowseItem[]>('/api/browse-items')
+const products = computed(() => fetchedProducts.value ?? [])
 
 const route = useRoute();
 
 const build = computed(() =>
-  products.find((p) => p.slug === route.params.slug)
+  products.value.find((p) => p.slug === route.params.slug)
 );
 
 const relatedBuilds = computed(() => {
   if (!build.value) return [];
-  return products
+  return products.value
     .filter(
       (p) =>
         p.slug !== build.value!.slug &&
         (p.category === build.value!.category ||
           p.theme === build.value!.theme ||
-          p.buildType === build.value!.buildType)
+          p.build_type === build.value!.build_type)
     )
     .slice(0, 4);
 });

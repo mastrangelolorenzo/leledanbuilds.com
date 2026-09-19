@@ -15,7 +15,10 @@
           </p>
         </div>
 
-        <div class="flex flex-col md:flex-row gap-8">
+        <p v-if="!products.length" class="text-text/50 text-center py-16">
+          Builds are temporarily unavailable — check back soon.
+        </p>
+        <div v-else class="flex flex-col md:flex-row gap-8">
           <!-- Sidebar -->
           <aside class="w-full md:w-72 shrink-0 flex flex-col gap-6">
             <div class="bg-background-secondary border border-white/10 rounded-2xl p-5">
@@ -60,11 +63,11 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               <div
                 v-for="item in paginatedProducts"
-                :key="item.title"
+                :key="item.slug"
                 class="group relative bg-background-secondary border border-white/10 rounded-2xl overflow-hidden flex flex-col transition-transform duration-300 hover:-translate-y-1"
               >
                 <img
-                  :src="item.image"
+                  :src="item.image_url"
                   :alt="item.title"
                   class="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500"
                   draggable="false"
@@ -73,7 +76,7 @@
                   <h3 class="text-white font-extrabold uppercase text-lg tracking-wide mb-3">{{ item.title }}</h3>
 
                   <div class="flex flex-wrap items-center gap-2 mb-3">
-                    <span class="px-2.5 py-1 rounded-full border border-primary/40 text-primary text-[11px] font-semibold uppercase tracking-wide">{{ item.buildType }}</span>
+                    <span class="px-2.5 py-1 rounded-full border border-primary/40 text-primary text-[11px] font-semibold uppercase tracking-wide">{{ item.build_type }}</span>
                     <span class="px-2.5 py-1 rounded-full border border-white/20 text-text/70 text-[11px] font-semibold uppercase tracking-wide">{{ item.theme }}</span>
                   </div>
 
@@ -147,10 +150,27 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from "vue";
 
-import { products, difficultyLevels } from "~/data/products";
+interface BrowseItem {
+  id: number
+  slug: string
+  title: string
+  image_url: string
+  price: number
+  difficulty: 'Easy' | 'Medium' | 'Hard' | 'Expert'
+  build_type: string
+  theme: string
+  category: string
+  released: string
+  description: string
+}
 
-const buildTypes = [...new Set(products.map((p) => p.buildType))];
-const themes = [...new Set(products.map((p) => p.theme))];
+const difficultyLevels: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3, Expert: 4 }
+
+const { data: fetchedProducts } = await useFetch<BrowseItem[]>('/api/browse-items')
+const products = computed(() => fetchedProducts.value ?? [])
+
+const buildTypes = [...new Set(products.value.map((p) => p.build_type))];
+const themes = [...new Set(products.value.map((p) => p.theme))];
 
 const activeBuildTypes = ref<string[]>([]);
 const activeThemes = ref<string[]>([]);
@@ -165,9 +185,9 @@ function toggleFilter(list: string[], value: string) {
 }
 
 const filteredProducts = computed(() =>
-  products.filter(
+  products.value.filter(
     (p) =>
-      (activeBuildTypes.value.length === 0 || activeBuildTypes.value.includes(p.buildType)) &&
+      (activeBuildTypes.value.length === 0 || activeBuildTypes.value.includes(p.build_type)) &&
       (activeThemes.value.length === 0 || activeThemes.value.includes(p.theme))
   )
 );
