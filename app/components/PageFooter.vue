@@ -42,7 +42,7 @@
           <NuxtLink to="/" class="text-text/80 hover:text-primary transition-colors text-sm">Home</NuxtLink>
           <NuxtLink to="/about" class="text-text/80 hover:text-primary transition-colors text-sm">About</NuxtLink>
           <NuxtLink to="/portfolio" class="text-text/80 hover:text-primary transition-colors text-sm">Builds</NuxtLink>
-          <a href="mailto:leledanbusiness@gmail.com" class="text-text/80 hover:text-primary transition-colors text-sm">Contact</a>
+          <NuxtLink to="/contact" class="text-text/80 hover:text-primary transition-colors text-sm">Contact</NuxtLink>
         </div>
 
         <!-- Legal -->

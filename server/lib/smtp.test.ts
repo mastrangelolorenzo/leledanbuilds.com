@@ -53,6 +53,22 @@ describe('buildMessage', () => {
   it('throws if the "to" address fails isValidEmailForHeader', () => {
     expect(() => buildMessage({ from: 'a@example.com', to: 'bad\r\naddress', subject: 'Hi', text: 'body' })).toThrow()
   })
+
+  it('includes a Reply-To header when replyTo is given', () => {
+    const msg = buildMessage({ from: 'a@example.com', to: 'b@example.com', subject: 'Hi', text: 'body', replyTo: 'visitor@example.com' })
+
+    expect(msg).toContain('Reply-To: visitor@example.com\r\n')
+  })
+
+  it('omits the Reply-To header when replyTo is not given', () => {
+    const msg = buildMessage({ from: 'a@example.com', to: 'b@example.com', subject: 'Hi', text: 'body' })
+
+    expect(msg).not.toContain('Reply-To:')
+  })
+
+  it('throws if replyTo fails isValidEmailForHeader', () => {
+    expect(() => buildMessage({ from: 'a@example.com', to: 'b@example.com', subject: 'Hi', text: 'body', replyTo: 'bad\r\naddress' })).toThrow()
+  })
 })
 
 describe('readLine', () => {

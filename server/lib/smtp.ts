@@ -18,12 +18,15 @@ function stripCrlf(value: string): string {
   return index === -1 ? value : value.slice(0, index)
 }
 
-export function buildMessage(opts: { from: string, to: string, subject: string, text: string }): string {
+export function buildMessage(opts: { from: string, to: string, subject: string, text: string, replyTo?: string }): string {
   if (!isValidEmailForHeader(opts.to)) {
     throw new Error('Invalid recipient email address.')
   }
   if (!isValidEmailForHeader(opts.from)) {
     throw new Error('Invalid sender email address.')
+  }
+  if (opts.replyTo && !isValidEmailForHeader(opts.replyTo)) {
+    throw new Error('Invalid reply-to email address.')
   }
 
   const subject = stripCrlf(opts.subject)
@@ -39,6 +42,7 @@ export function buildMessage(opts: { from: string, to: string, subject: string, 
   return [
     `From: ${opts.from}\r\n`,
     `To: ${opts.to}\r\n`,
+    ...(opts.replyTo ? [`Reply-To: ${opts.replyTo}\r\n`] : []),
     `Subject: ${subject}\r\n`,
     `MIME-Version: 1.0\r\n`,
     `Content-Type: text/plain; charset=utf-8\r\n`,
@@ -75,7 +79,7 @@ export async function readResponse(reader: ReadableStreamDefaultReader<Uint8Arra
 
 export async function sendMail(
   env: { SMTP_USER?: string, SMTP_PASSWORD?: string },
-  opts: { to: string, subject: string, text: string }
+  opts: { to: string, subject: string, text: string, replyTo?: string }
 ): Promise<void> {
   const user = env.SMTP_USER
   const password = env.SMTP_PASSWORD
@@ -83,7 +87,7 @@ export async function sendMail(
     throw new Error('SMTP_USER/SMTP_PASSWORD are not configured.')
   }
 
-  const message = buildMessage({ from: user, to: opts.to, subject: opts.subject, text: opts.text })
+  const message = buildMessage({ from: user, to: opts.to, subject: opts.subject, text: opts.text, replyTo: opts.replyTo })
 
   const socket = connect({ hostname: SMTP_HOST, port: SMTP_PORT }, { secureTransport: 'on' })
   const writer = socket.writable.getWriter()

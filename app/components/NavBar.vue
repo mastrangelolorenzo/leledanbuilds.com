@@ -158,6 +158,11 @@
       label: 'Pricing',
       to: '/services',
       icon: 'i-lucide-hammer',
+    },
+    {
+      label: 'Contact',
+      to: '/contact',
+      icon: 'i-lucide-mail',
     }
   ]);
 
