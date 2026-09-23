@@ -126,8 +126,6 @@
         </div>
       </div>
     </div>
-
-    <PageFooter />
   </div>
 </template>
 

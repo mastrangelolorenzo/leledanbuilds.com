@@ -64,16 +64,14 @@
         </NuxtLink>
       </div>
 
-      <!-- Commission CTA -->
-      <a
-        href="https://discord.gg/u9FyUqa6uz"
-        target="_blank"
-        rel="noopener noreferrer"
+      <!-- Get in Touch CTA -->
+      <NuxtLink
+        to="/contact"
         class="hidden lg:inline-flex shrink-0 items-center gap-2 bg-primary text-black font-bold uppercase text-sm rounded-full px-5 py-2 hover:bg-secondary transition-all duration-300 hover:scale-105"
       >
-        Commission
+        Get in Touch
         <UIcon name="i-lucide-arrow-right" class="text-base" />
-      </a>
+      </NuxtLink>
     </div>
 
     <!-- Mobile overlay menu -->
@@ -128,16 +126,14 @@
               <span>{{ item.label }}</span>
             </NuxtLink>
           </div>
-          <a
-            href="https://discord.gg/u9FyUqa6uz"
-            target="_blank"
-            rel="noopener noreferrer"
+          <NuxtLink
+            to="/contact"
             class="mt-4 inline-flex items-center justify-center gap-2 bg-primary text-black font-bold uppercase text-sm rounded-full px-5 py-3 hover:bg-secondary transition-all duration-300"
             @click="mobileOpen = false"
           >
-            Commission
+            Get in Touch
             <UIcon name="i-lucide-arrow-right" class="text-base" />
-          </a>
+          </NuxtLink>
         </nav>
       </div>
     </transition>
@@ -157,12 +153,7 @@
     {
       label: 'Pricing',
       to: '/services',
-      icon: 'i-lucide-hammer',
-    },
-    {
-      label: 'Contact',
-      to: '/contact',
-      icon: 'i-lucide-mail',
+      icon: 'i-lucide-file-text',
     }
   ]);
 
