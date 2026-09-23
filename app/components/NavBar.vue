@@ -1,6 +1,6 @@
 <template>
   <nav class="flex items-center justify-center py-3 px-4 sm:py-4 sm:px-8">
-    <div class="flex items-center w-full max-w-3xl rounded-full bg-background-secondary/60 px-5 sm:px-7 py-3.5">
+    <div class="flex items-center w-full max-w-4xl rounded-full bg-background-secondary/60 px-5 sm:px-7 py-3.5">
       <!-- Logo -->
       <NuxtLink to="/" class="flex items-center gap-2 shrink-0">
         <img src="/images/logo.png" alt="leledan06 logo" class="h-8 w-auto object-contain" />
@@ -9,7 +9,7 @@
 
       <!-- Hamburger button for mobile -->
       <button
-        class="ml-auto sm:hidden p-2 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+        class="ml-auto lg:hidden p-2 rounded focus:outline-none focus:ring-2 focus:ring-primary"
         @click="mobileOpen = !mobileOpen"
         aria-label="Open navigation menu"
       >
@@ -17,7 +17,7 @@
       </button>
 
       <!-- Desktop menu -->
-      <div class="flex-1 min-w-0 gap-6 flex justify-center sm:flex hidden pl-8 sm:pl-12 pr-8 sm:pr-12">
+      <div class="flex-1 min-w-0 gap-4 lg:gap-5 hidden lg:flex justify-center pl-4 lg:pl-8 pr-4 lg:pr-10">
         <!-- About dropdown -->
         <div class="group relative flex items-center">
           <button
@@ -69,7 +69,7 @@
         href="https://discord.gg/u9FyUqa6uz"
         target="_blank"
         rel="noopener noreferrer"
-        class="hidden sm:inline-flex shrink-0 items-center gap-2 bg-primary text-black font-bold uppercase text-sm rounded-full px-5 py-2 hover:bg-secondary transition-all duration-300 hover:scale-105"
+        class="hidden lg:inline-flex shrink-0 items-center gap-2 bg-primary text-black font-bold uppercase text-sm rounded-full px-5 py-2 hover:bg-secondary transition-all duration-300 hover:scale-105"
       >
         Commission
         <UIcon name="i-lucide-arrow-right" class="text-base" />

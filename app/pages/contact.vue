@@ -28,15 +28,15 @@
 
           <form class="flex flex-col gap-4" @submit.prevent="submit">
             <UFormField label="Name" required>
-              <UInput v-model="form.name" placeholder="Your name" class="w-full" />
+              <UInput v-model="form.name" placeholder="Your name" size="lg" class="w-full" :ui="{ base: 'rounded-2xl' }" />
             </UFormField>
 
             <UFormField label="Email" required>
-              <UInput v-model="form.email" type="email" placeholder="youremail.com" class="w-full" />
+              <UInput v-model="form.email" type="email" placeholder="youremail.com" size="lg" class="w-full" :ui="{ base: 'rounded-2xl' }" />
             </UFormField>
 
             <UFormField label="Inquiry type" required>
-              <USelect v-model="form.inquiryType" :items="INQUIRY_TYPES" placeholder="Select inquiry type" class="w-full" />
+              <USelect v-model="form.inquiryType" :items="INQUIRY_TYPES" placeholder="Select inquiry type" size="lg" class="w-full rounded-2xl" />
             </UFormField>
 
             <UFormField label="Message" required>
@@ -45,7 +45,9 @@
                 placeholder="Tell us how we can help…"
                 :rows="6"
                 :maxlength="MAX_MESSAGE_LENGTH"
+                size="lg"
                 class="w-full"
+                :ui="{ base: 'rounded-3xl' }"
               />
               <p class="text-text/40 text-xs text-right mt-1">{{ form.message.length }}/{{ MAX_MESSAGE_LENGTH }}</p>
             </UFormField>
@@ -53,7 +55,7 @@
             <p v-if="errorMessage" class="text-red-400 text-sm">{{ errorMessage }}</p>
             <p v-if="successMessage" class="text-primary text-sm">{{ successMessage }}</p>
 
-            <UButton type="submit" :loading="sending" block size="lg">
+            <UButton type="submit" :loading="sending" block size="lg" class="rounded-full">
               Send Message
               <UIcon name="i-lucide-arrow-right" class="text-base" />
             </UButton>
