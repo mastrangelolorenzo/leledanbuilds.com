@@ -198,6 +198,7 @@ const saving = ref(false)
 const formError = ref('')
 const listError = ref('')
 const editingId = ref<number | null>(null)
+const formGeneration = ref(0)
 const form = reactive({
   title: '',
   image_url: '',
@@ -222,15 +223,20 @@ const deliverableFilename = ref('')
 
 async function onImageFileSelected(file: File | null) {
   if (!file) return
+  const generation = formGeneration.value
   uploadingImage.value = true
   uploadError.value = ''
   try {
     const body = new FormData()
     body.append('file', file)
     const res = await $fetch<{ url: string }>('/api/admin/upload', { method: 'POST', body })
-    form.image_url = res.url
+    if (generation === formGeneration.value) {
+      form.image_url = res.url
+    }
   } catch (e: unknown) {
-    uploadError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Upload failed.'
+    if (generation === formGeneration.value) {
+      uploadError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Upload failed.'
+    }
   } finally {
     uploadingImage.value = false
     selectedImageFile.value = null
@@ -239,16 +245,21 @@ async function onImageFileSelected(file: File | null) {
 
 async function onDeliverableFileSelected(file: File | null) {
   if (!file) return
+  const generation = formGeneration.value
   uploadingDeliverable.value = true
   deliverableUploadError.value = ''
   try {
     const body = new FormData()
     body.append('file', file)
     const res = await $fetch<{ key: string, filename: string }>('/api/admin/upload-file', { method: 'POST', body })
-    form.download_key = res.key
-    deliverableFilename.value = res.filename
+    if (generation === formGeneration.value) {
+      form.download_key = res.key
+      deliverableFilename.value = res.filename
+    }
   } catch (e: unknown) {
-    deliverableUploadError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Upload failed.'
+    if (generation === formGeneration.value) {
+      deliverableUploadError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Upload failed.'
+    }
   } finally {
     uploadingDeliverable.value = false
     selectedDeliverableFile.value = null
@@ -256,6 +267,7 @@ async function onDeliverableFileSelected(file: File | null) {
 }
 
 function startCreate() {
+  formGeneration.value++
   editingId.value = null
   form.title = ''
   form.image_url = ''
@@ -276,6 +288,7 @@ function startCreate() {
 }
 
 function startEdit(item: BrowseItem) {
+  formGeneration.value++
   editingId.value = item.id
   form.title = item.title
   form.image_url = item.image_url
