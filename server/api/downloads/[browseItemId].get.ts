@@ -5,7 +5,7 @@
 // deliverable key lives under the `deliverables/` prefix -- so this ownership
 // check is the single thing standing between a paid product and the public.
 import { requireAuth } from '../../utils/requireAuth'
-import { buildDownloadFilename } from '../../utils/downloadFilename'
+import { buildContentDisposition } from '../../utils/downloadFilename'
 
 interface OrderRow {
   id: number
@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
   }
 
   setResponseHeader(event, 'Content-Type', 'application/octet-stream')
-  setResponseHeader(event, 'Content-Disposition', `attachment; filename="${buildDownloadFilename(item.title, item.download_key)}"`)
+  setResponseHeader(event, 'Content-Disposition', `attachment; ${buildContentDisposition(item.title, item.download_key)}`)
   // Paid content: must never be served out of a shared/proxy cache to
   // anyone but the owner who was just re-checked above.
   setResponseHeader(event, 'Cache-Control', 'private, no-store')
