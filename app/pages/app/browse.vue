@@ -130,6 +130,22 @@
           <UFormField label="Description">
             <UTextarea v-model="form.description" placeholder="Description" :rows="6" class="w-full" />
           </UFormField>
+          <UFormField label="Downloadable file (paid deliverable)">
+            <div class="flex flex-col gap-2">
+              <p v-if="form.download_key && !deliverableFilename" class="text-text/50 text-xs">A file is currently attached. Upload a new one to replace it.</p>
+              <p v-if="deliverableFilename" class="text-text/50 text-xs">Attached: {{ deliverableFilename }}</p>
+              <UFileUpload
+                v-model="selectedDeliverableFile"
+                accept=".zip,.rar,.7z,.schem,.schematic,.litematic,.mcworld,.pdf"
+                :disabled="uploadingDeliverable"
+                icon="i-lucide-file-up"
+                label="Click or drop a file to upload (zip, rar, 7z, schem, schematic, litematic, mcworld, pdf — max 100 MB)"
+                @update:model-value="onDeliverableFileSelected"
+              />
+              <p v-if="uploadingDeliverable" class="text-text/50 text-xs">Uploading…</p>
+              <p v-if="deliverableUploadError" class="text-red-400 text-xs">{{ deliverableUploadError }}</p>
+            </div>
+          </UFormField>
           <p v-if="formError" class="text-red-400 text-sm">{{ formError }}</p>
           <div class="flex gap-2 mt-2">
             <UButton :loading="saving" @click="save">Save</UButton>
@@ -158,6 +174,8 @@ interface BrowseItem {
   category: string
   released: string
   description: string
+  download_key: string | null
+  has_download: boolean
 }
 
 const { data: items, refresh } = await useFetch<BrowseItem[]>('/api/browse-items')
@@ -190,11 +208,17 @@ const form = reactive({
   category: '',
   released: '',
   description: '',
+  download_key: null as string | null,
 })
 
 const selectedImageFile = ref<File | null>(null)
 const uploadingImage = ref(false)
 const uploadError = ref('')
+
+const selectedDeliverableFile = ref<File | null>(null)
+const uploadingDeliverable = ref(false)
+const deliverableUploadError = ref('')
+const deliverableFilename = ref('')
 
 async function onImageFileSelected(file: File | null) {
   if (!file) return
@@ -213,6 +237,24 @@ async function onImageFileSelected(file: File | null) {
   }
 }
 
+async function onDeliverableFileSelected(file: File | null) {
+  if (!file) return
+  uploadingDeliverable.value = true
+  deliverableUploadError.value = ''
+  try {
+    const body = new FormData()
+    body.append('file', file)
+    const res = await $fetch<{ key: string, filename: string }>('/api/admin/upload-file', { method: 'POST', body })
+    form.download_key = res.key
+    deliverableFilename.value = res.filename
+  } catch (e: unknown) {
+    deliverableUploadError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Upload failed.'
+  } finally {
+    uploadingDeliverable.value = false
+    selectedDeliverableFile.value = null
+  }
+}
+
 function startCreate() {
   editingId.value = null
   form.title = ''
@@ -224,9 +266,12 @@ function startCreate() {
   form.category = ''
   form.released = ''
   form.description = ''
+  form.download_key = null
   formError.value = ''
   selectedImageFile.value = null
   uploadError.value = ''
+  deliverableFilename.value = ''
+  deliverableUploadError.value = ''
   editing.value = true
 }
 
@@ -241,9 +286,12 @@ function startEdit(item: BrowseItem) {
   form.category = item.category
   form.released = item.released
   form.description = item.description
+  form.download_key = item.download_key
   formError.value = ''
   selectedImageFile.value = null
   uploadError.value = ''
+  deliverableFilename.value = ''
+  deliverableUploadError.value = ''
   editing.value = true
 }
 
@@ -261,6 +309,7 @@ async function save() {
       category: form.category,
       released: form.released,
       description: form.description,
+      download_key: form.download_key,
     }
     if (editingId.value) {
       await $fetch(`/api/browse-items/${editingId.value}`, { method: 'PUT', body })
