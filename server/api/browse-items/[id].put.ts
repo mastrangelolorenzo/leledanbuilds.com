@@ -14,6 +14,7 @@ interface UpdateBody {
   category: string
   released: string
   description: string
+  download_key?: string | null
 }
 
 export default defineEventHandler(async (event) => {
@@ -45,10 +46,10 @@ export default defineEventHandler(async (event) => {
   try {
     const result = await db
       .prepare(
-        `UPDATE browse_items SET slug = ?, title = ?, image_url = ?, price = ?, difficulty = ?, build_type = ?, theme = ?, category = ?, released = ?, description = ?, updated_at = ?
+        `UPDATE browse_items SET slug = ?, title = ?, image_url = ?, price = ?, difficulty = ?, build_type = ?, theme = ?, category = ?, released = ?, description = ?, download_key = ?, updated_at = ?
          WHERE id = ?`
       )
-      .bind(slug, body.title, body.image_url, body.price, body.difficulty, buildType, theme, category, body.released, body.description, new Date().toISOString(), id)
+      .bind(slug, body.title, body.image_url, body.price, body.difficulty, buildType, theme, category, body.released, body.description, body.download_key ?? null, new Date().toISOString(), id)
       .run()
 
     if (result.meta.changes === 0) {

@@ -14,6 +14,7 @@ interface CreateBody {
   category: string
   released: string
   description: string
+  download_key?: string | null
 }
 
 export default defineEventHandler(async (event) => {
@@ -42,10 +43,10 @@ export default defineEventHandler(async (event) => {
   try {
     const result = await db
       .prepare(
-        `INSERT INTO browse_items (slug, title, image_url, price, difficulty, build_type, theme, category, released, description, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO browse_items (slug, title, image_url, price, difficulty, build_type, theme, category, released, description, download_key, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .bind(slug, body.title, body.image_url, body.price, body.difficulty, buildType, theme, category, body.released, body.description, now, now)
+      .bind(slug, body.title, body.image_url, body.price, body.difficulty, buildType, theme, category, body.released, body.description, body.download_key ?? null, now, now)
       .run()
 
     return { id: result.meta.last_row_id }
