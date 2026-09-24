@@ -91,6 +91,23 @@
                 Log in to buy
                 <UIcon name="i-lucide-arrow-right" class="text-base" />
               </NuxtLink>
+              <div v-else-if="owned" class="flex flex-col items-end gap-2">
+                <span class="inline-flex items-center gap-2 bg-primary/10 border border-primary/30 text-primary font-bold uppercase text-sm rounded-full px-6 py-3">
+                  You already own this build
+                </span>
+                <div class="flex items-center gap-4 text-xs font-bold uppercase tracking-wide">
+                  <a
+                    :href="`/api/downloads/${build.id}`"
+                    class="inline-flex items-center gap-1.5 text-primary hover:text-secondary transition-colors"
+                  >
+                    <UIcon name="i-lucide-download" class="text-sm" />
+                    Download
+                  </a>
+                  <NuxtLink to="/app/purchases" class="text-text/60 hover:text-primary transition-colors">
+                    My Purchases
+                  </NuxtLink>
+                </div>
+              </div>
               <span
                 v-else-if="!build.has_download"
                 class="inline-flex items-center gap-2 bg-white/10 text-text/50 font-bold uppercase text-sm rounded-full px-6 py-3 cursor-not-allowed"
@@ -180,12 +197,28 @@ if (!user.value) {
   user.value = me.value ?? null
 }
 
+// Ownership drives a 4th Buy-row state (already-owned) below. Reuses
+// GET /api/my-orders (already scoped to the caller's own completed
+// purchases) instead of a new endpoint -- it's fetched only when a user is
+// present, and any failure here (network hiccup, etc.) just leaves this
+// empty, which degrades to the normal Buy state rather than hiding the
+// buttons or blocking the page.
+const myOrders = ref<{ browse_item_id: number }[]>([])
+if (user.value) {
+  const { data: orders } = await useFetch<{ browse_item_id: number }[]>('/api/my-orders', { retry: false })
+  myOrders.value = orders.value ?? []
+}
+
 const products = computed(() => fetchedProducts.value ?? [])
 
 const route = useRoute();
 
 const build = computed(() =>
   products.value.find((p) => p.slug === route.params.slug)
+);
+
+const owned = computed(() =>
+  !!build.value && myOrders.value.some((o) => o.browse_item_id === build.value!.id)
 );
 
 const relatedBuilds = computed(() => {

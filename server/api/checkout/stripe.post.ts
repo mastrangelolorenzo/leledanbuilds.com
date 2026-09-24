@@ -56,6 +56,40 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 409, statusMessage: 'This item is not yet available for purchase.' })
   }
 
+  // requireAuth only proves the session cookie is a validly-signed JWT --
+  // it does not prove the userId inside it still exists (e.g. a token
+  // minted by a different environment, or an account deleted after the
+  // session was issued). Without this, the INSERT below fails its FOREIGN
+  // KEY constraint and the buyer sees a bare "Server Error" on the Buy
+  // button instead of an actionable message.
+  const user = await db
+    .prepare('SELECT id FROM users WHERE id = ?')
+    .bind(session.userId)
+    .first<{ id: number }>()
+
+  if (!user) {
+    console.error(`[stripe-checkout] session references missing user ${session.userId}`)
+    throw createError({ statusCode: 401, statusMessage: 'Your session is no longer valid. Please log in again.' })
+  }
+
+  // Refunds do not revoke access (see server/api/webhooks/stripe.post.ts),
+  // so a second completed purchase of the same item is pure loss for the
+  // buyer. Match on status = 'completed' ONLY -- a 'pending' order is an
+  // abandoned or in-flight attempt and a 'failed' one means the payment
+  // never went through, and in both cases the customer must be able to
+  // try again.
+  const existing = await db
+    .prepare(`SELECT id FROM orders WHERE user_id = ? AND browse_item_id = ? AND status = 'completed' LIMIT 1`)
+    .bind(session.userId, item.id)
+    .first<{ id: number }>()
+
+  if (existing) {
+    throw createError({
+      statusCode: 409,
+      statusMessage: 'You already own this build — you can download it from My Purchases.',
+    })
+  }
+
   const origin = getPublicOrigin(event)
   const now = new Date().toISOString()
 
