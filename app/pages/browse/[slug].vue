@@ -2,6 +2,24 @@
   <div class="bg-background min-h-screen">
     <NavBar class="sticky top-0 z-10" />
 
+    <div v-if="route.query.checkout === 'success'" class="max-w-6xl mx-auto px-6 md:px-10 lg:px-16 pt-8">
+      <div class="bg-primary/10 border border-primary/30 text-primary rounded-xl px-4 py-3 text-sm font-semibold">
+        Payment received! Your download will appear in
+        <NuxtLink to="/app/purchases" class="underline">your dashboard</NuxtLink> shortly.
+      </div>
+    </div>
+    <div v-else-if="route.query.checkout === 'pending'" class="max-w-6xl mx-auto px-6 md:px-10 lg:px-16 pt-8">
+      <div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl px-4 py-3 text-sm font-semibold">
+        We received your approval and are confirming your payment now — this can take a moment. Your download will appear in
+        <NuxtLink to="/app/purchases" class="underline">your dashboard</NuxtLink> shortly.
+      </div>
+    </div>
+    <div v-else-if="route.query.checkout === 'cancelled'" class="max-w-6xl mx-auto px-6 md:px-10 lg:px-16 pt-8">
+      <div class="bg-white/5 border border-white/10 text-text/70 rounded-xl px-4 py-3 text-sm font-semibold">
+        Checkout cancelled — no payment was made.
+      </div>
+    </div>
+
     <div v-if="build" class="relative overflow-hidden py-14 md:py-20 px-6 md:px-10 lg:px-16">
       <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none"></div>
 
@@ -65,15 +83,31 @@
 
             <div class="flex items-center justify-between mt-auto pt-6 border-t border-white/10">
               <span class="text-primary font-black text-4xl">€{{ build.price }}</span>
-              <a
-                href="https://discord.gg/u9FyUqa6uz"
-                target="_blank"
-                rel="noopener noreferrer"
+              <NuxtLink
+                v-if="!user"
+                :to="`/app/login?redirect=/browse/${build.slug}`"
                 class="inline-flex items-center gap-2 bg-primary text-black font-bold uppercase text-sm rounded-full px-6 py-3 hover:bg-secondary transition-all duration-300"
               >
-                Buy
+                Log in to buy
                 <UIcon name="i-lucide-arrow-right" class="text-base" />
-              </a>
+              </NuxtLink>
+              <span
+                v-else-if="!build.has_download"
+                class="inline-flex items-center gap-2 bg-white/10 text-text/50 font-bold uppercase text-sm rounded-full px-6 py-3 cursor-not-allowed"
+              >
+                Coming soon
+              </span>
+              <div v-else class="flex flex-col items-end gap-2">
+                <div class="flex items-center gap-3">
+                  <UButton :loading="checkoutLoading === 'stripe'" :disabled="!!checkoutLoading" @click="startCheckout('stripe')">
+                    Buy with card
+                  </UButton>
+                  <UButton :loading="checkoutLoading === 'paypal'" :disabled="!!checkoutLoading" color="neutral" variant="outline" @click="startCheckout('paypal')">
+                    Buy with PayPal
+                  </UButton>
+                </div>
+                <p v-if="checkoutError" class="text-red-400 text-xs">{{ checkoutError }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -114,7 +148,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRoute } from "#app";
 
 interface BrowseItem {
@@ -129,11 +163,23 @@ interface BrowseItem {
   category: string
   released: string
   description: string
+  has_download: boolean
 }
 
 const difficultyLevels: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3, Expert: 4 }
 
 const { data: fetchedProducts } = await useFetch<BrowseItem[]>('/api/browse-items')
+
+// The global middleware (app/middleware/auth.global.ts) only populates
+// useAuthUser() for /app/* routes -- this is a public page, so a logged-in
+// visitor's session must be fetched here too, or the buy buttons below would
+// never know they're logged in.
+const user = useAuthUser()
+if (!user.value) {
+  const { data: me } = await useFetch<{ userId: number, role: 'admin' | 'user' } | null>('/api/auth/me', { retry: false })
+  user.value = me.value ?? null
+}
+
 const products = computed(() => fetchedProducts.value ?? [])
 
 const route = useRoute();
@@ -154,4 +200,23 @@ const relatedBuilds = computed(() => {
     )
     .slice(0, 4);
 });
+
+const checkoutLoading = ref<'stripe' | 'paypal' | null>(null)
+const checkoutError = ref('')
+
+async function startCheckout(provider: 'stripe' | 'paypal') {
+  if (!build.value) return
+  checkoutLoading.value = provider
+  checkoutError.value = ''
+  try {
+    const res = await $fetch<{ url: string }>(`/api/checkout/${provider}`, {
+      method: 'POST',
+      body: { browse_item_id: build.value.id },
+    })
+    window.location.href = res.url
+  } catch (e: unknown) {
+    checkoutError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Checkout failed. Please try again.'
+    checkoutLoading.value = null
+  }
+}
 </script>

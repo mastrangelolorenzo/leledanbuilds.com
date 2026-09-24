@@ -2,6 +2,24 @@
   <div class="bg-background">
     <NavBar class="sticky top-0 z-10" />
 
+    <div v-if="route.query.checkout === 'success'" class="max-w-6xl mx-auto px-6 md:px-10 lg:px-16 pt-8">
+      <div class="bg-primary/10 border border-primary/30 text-primary rounded-xl px-4 py-3 text-sm font-semibold">
+        Payment received! Your download will appear in
+        <NuxtLink to="/app/purchases" class="underline">your dashboard</NuxtLink> shortly.
+      </div>
+    </div>
+    <div v-else-if="route.query.checkout === 'pending'" class="max-w-6xl mx-auto px-6 md:px-10 lg:px-16 pt-8">
+      <div class="bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-xl px-4 py-3 text-sm font-semibold">
+        We received your approval and are confirming your payment now — this can take a moment. Your download will appear in
+        <NuxtLink to="/app/purchases" class="underline">your dashboard</NuxtLink> shortly.
+      </div>
+    </div>
+    <div v-else-if="route.query.checkout === 'cancelled'" class="max-w-6xl mx-auto px-6 md:px-10 lg:px-16 pt-8">
+      <div class="bg-white/5 border border-white/10 text-text/70 rounded-xl px-4 py-3 text-sm font-semibold">
+        Checkout cancelled — no payment was made.
+      </div>
+    </div>
+
     <div class="relative overflow-hidden py-14 md:py-20 px-6 md:px-10 lg:px-16">
       <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none"></div>
 
@@ -149,6 +167,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch } from "vue";
+import { useRoute } from "#app";
 
 interface BrowseItem {
   id: number
@@ -165,6 +184,8 @@ interface BrowseItem {
 }
 
 const difficultyLevels: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3, Expert: 4 }
+
+const route = useRoute();
 
 const { data: fetchedProducts } = await useFetch<BrowseItem[]>('/api/browse-items')
 const products = computed(() => fetchedProducts.value ?? [])
