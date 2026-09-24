@@ -57,7 +57,8 @@ export default defineEventHandler(async (event) => {
   const orderId = Number(session.metadata?.order_id)
   if (!Number.isInteger(orderId)) {
     console.error(`[stripe-webhook] ${type} for session ${session.id} carries no usable order_id metadata`)
-    throw createError({ statusCode: 400, statusMessage: 'Missing order_id metadata.' })
+    // Permanent: no retry will ever produce usable metadata for this event.
+    return { received: true }
   }
 
   const db = event.context.cloudflare?.env?.DB
@@ -77,7 +78,8 @@ export default defineEventHandler(async (event) => {
   }
   if (order.provider !== 'stripe') {
     console.error(`[stripe-webhook] order ${orderId} belongs to provider ${order.provider}, refusing ${type}`)
-    throw createError({ statusCode: 409, statusMessage: 'Order provider mismatch.' })
+    // Permanent: this order will never become a Stripe order on retry.
+    return { received: true }
   }
 
   const now = new Date().toISOString()
@@ -101,11 +103,14 @@ export default defineEventHandler(async (event) => {
     return { received: true }
   }
 
-  if (typeof session.amount_total === 'number' && session.amount_total !== order.amount * 100) {
+  const expectedAmountInCents = Math.round(order.amount * 100)
+  if (typeof session.amount_total === 'number' && session.amount_total !== expectedAmountInCents) {
     console.error(
-      `[stripe-webhook] amount mismatch on order ${orderId}: session charged ${session.amount_total}, expected ${order.amount * 100}`
+      `[stripe-webhook] amount mismatch on order ${orderId}: session charged ${session.amount_total}, expected ${expectedAmountInCents}`
     )
-    throw createError({ statusCode: 409, statusMessage: 'Amount mismatch.' })
+    // Amount mismatch is permanent: retrying the same event can never make it
+    // match. Log loudly, but don't burn the endpoint's health retrying forever.
+    return { received: true }
   }
 
   const result = await db
@@ -116,7 +121,7 @@ export default defineEventHandler(async (event) => {
     .bind(session.payment_intent ?? session.id, now, orderId)
     .run()
 
-  if (result.meta.changes === 0) {
+  if (!result.meta?.changes) {
     const recheck = await db
       .prepare('SELECT status FROM orders WHERE id = ?')
       .bind(orderId)

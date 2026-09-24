@@ -47,8 +47,14 @@ describe('verifyStripeSignature', () => {
     expect(await verifyStripeSignature(payload, `t=${timestamp},v1=${ours},v1=${otherSecret}`, secret)).toBe(true)
   })
 
-  it('rejects a non-numeric timestamp', async () => {
-    expect(await verifyStripeSignature(payload, 't=not-a-number,v1=abcdef0123456789', secret)).toBe(false)
+  it('rejects a non-numeric timestamp even when the signature itself matches', async () => {
+    const timestamp = 'not-a-number'
+    const enc = new TextEncoder()
+    const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(`${timestamp}.${payload}`))
+    const v1 = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('')
+
+    expect(await verifyStripeSignature(payload, `t=${timestamp},v1=${v1}`, secret)).toBe(false)
   })
 
   it('accepts a header with whitespace after the commas', async () => {
