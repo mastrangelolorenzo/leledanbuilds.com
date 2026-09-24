@@ -52,7 +52,13 @@
       </div>
     </template>
 
-    <p v-else class="text-text/60">Nothing here yet — check back soon.</p>
+    <div v-else class="flex flex-col items-center justify-center gap-3 py-16">
+      <p class="text-text/60">Nothing here yet — check back soon.</p>
+      <NuxtLink to="/app/purchases" class="inline-flex items-center gap-1.5 text-sm font-bold uppercase text-primary hover:text-secondary transition-colors">
+        View my purchases
+        <UIcon name="i-lucide-arrow-right" class="text-xs" />
+      </NuxtLink>
+    </div>
   </div>
 </template>
 

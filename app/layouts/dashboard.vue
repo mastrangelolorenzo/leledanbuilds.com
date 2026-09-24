@@ -15,6 +15,13 @@
           Dashboard
         </NuxtLink>
         <NuxtLink
+          to="/app/purchases"
+          class="text-xs font-bold uppercase tracking-wide"
+          :class="isActive('/app/purchases') ? 'text-primary' : 'text-text/60'"
+        >
+          My Purchases
+        </NuxtLink>
+        <NuxtLink
           v-if="user?.role === 'admin'"
           to="/app/posts"
           class="text-xs font-bold uppercase tracking-wide"
@@ -75,6 +82,14 @@
         >
           <UIcon name="i-lucide-layout-dashboard" class="text-base shrink-0" />
           Dashboard
+        </NuxtLink>
+        <NuxtLink
+          to="/app/purchases"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          :class="isActive('/app/purchases') ? 'bg-primary/10 text-primary' : 'text-text/70 hover:bg-white/5 hover:text-text'"
+        >
+          <UIcon name="i-lucide-download" class="text-base shrink-0" />
+          My Purchases
         </NuxtLink>
         <NuxtLink
           v-if="user?.role === 'admin'"

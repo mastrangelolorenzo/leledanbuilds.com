@@ -277,6 +277,38 @@ create a duplicate/garbage value. Creating a genuinely new value is still
 possible — it's a deliberate action in the dashboard's select field, not an
 accident.
 
+### Purchases (Stripe + PayPal)
+
+Logged-in users (login required) can buy a `/browse` item once the admin has
+attached a downloadable file to it (`/app/browse`'s "Downloadable file"
+field — stored in R2 under `deliverables/`, key kept in
+`browse_items.download_key`, never exposed to non-admin API responses).
+Checkout uses Stripe's hosted Checkout Session and PayPal's Orders v2
+redirect flow — no card data ever touches this app. Both providers confirm
+payment through a signature-verified webhook
+(`server/api/webhooks/stripe.post.ts`, `server/api/webhooks/paypal.post.ts`);
+PayPal additionally captures on the buyer's return
+(`server/api/checkout/paypal-return.get.ts`), since its redirect-only flow
+needs an explicit capture call before the webhook arrives. Every payment
+attempt is one row in the `orders` table; a row only becomes `completed`
+once a provider confirms the money moved.
+
+Purchased files are served only through
+`GET /api/downloads/:browseItemId`, which checks the requester has a
+`completed` order for that exact item before streaming the file out of R2
+with `Content-Disposition: attachment` — the underlying R2 key is never
+sent to any client. Logged-in users see their completed purchases with a
+Download button at `/app/purchases` (linked from the dashboard sidebar for
+every logged-in user, not just admins).
+
+Requires `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYPAL_CLIENT_ID`,
+`PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`, `PAYPAL_API_BASE` as env vars /
+Cloudflare secrets — see `.dev.vars.example`. Local webhook delivery needs a
+tunnel, since Stripe/PayPal call the webhook URL from their own servers:
+use the Stripe CLI (`stripe listen --forward-to <local-url>/api/webhooks/stripe`)
+for Stripe, and a tunnel (ngrok/cloudflared) plus PayPal's sandbox webhook
+simulator for PayPal.
+
 ### Local dev
 
 1. Copy `.dev.vars.example` to `.dev.vars` and fill in `SESSION_SECRET`
