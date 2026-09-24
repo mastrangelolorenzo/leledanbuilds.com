@@ -206,6 +206,10 @@ const checkoutError = ref('')
 
 async function startCheckout(provider: 'stripe' | 'paypal') {
   if (!build.value) return
+  // Double-submit protection currently also holds because Nuxt UI's button
+  // re-checks `disabled` at click time, but that invariant belongs to this
+  // function, not to a third-party component's internals.
+  if (checkoutLoading.value) return
   checkoutLoading.value = provider
   checkoutError.value = ''
   try {
@@ -213,6 +217,15 @@ async function startCheckout(provider: 'stripe' | 'paypal') {
       method: 'POST',
       body: { browse_item_id: build.value.id },
     })
+    // A 200 whose body lacks a usable url must not silently coerce to the
+    // string "undefined" and navigate there -- require an absolute https
+    // URL (both providers always return one), which also means a tampered
+    // or malformed response can never hand this a javascript:/data: URL.
+    if (typeof res?.url !== 'string' || !res.url.startsWith('https://')) {
+      checkoutError.value = 'Checkout failed. Please try again.'
+      checkoutLoading.value = null
+      return
+    }
     window.location.href = res.url
   } catch (e: unknown) {
     checkoutError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Checkout failed. Please try again.'
