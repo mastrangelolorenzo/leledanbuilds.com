@@ -30,7 +30,7 @@ export async function getPayPalAccessToken(apiBase: string, clientId: string, cl
 export async function createPayPalOrder(
   apiBase: string,
   accessToken: string,
-  params: { amount: string, currency: string, title: string, returnUrl: string, cancelUrl: string }
+  params: { amount: string, currency: string, title: string, returnUrl: string, cancelUrl: string, customId: string }
 ): Promise<{ id: string, approveUrl: string }> {
   const res = await fetch(`${apiBase}/v2/checkout/orders`, {
     method: 'POST',
@@ -41,7 +41,17 @@ export async function createPayPalOrder(
     body: JSON.stringify({
       intent: 'CAPTURE',
       purchase_units: [
-        { amount: { currency_code: params.currency, value: params.amount }, description: params.title },
+        {
+          amount: { currency_code: params.currency, value: params.amount },
+          description: params.title,
+          // Fallback correlation key for the webhook: related_ids.order_id
+          // (PayPal's own order id) is documented as present for this flow
+          // but typed optional. If it's ever absent on a capture event, the
+          // webhook falls back to this (our own order id, echoed back by
+          // PayPal onto the capture resource) rather than permanently giving
+          // up -- see decidePayPalWebhookOutcome's caller in the webhook route.
+          custom_id: params.customId,
+        },
       ],
       application_context: {
         return_url: params.returnUrl,
@@ -170,4 +180,99 @@ export async function verifyPayPalWebhookSignature(
   }
   const data = await res.json() as { verification_status: string }
   return data.verification_status === 'SUCCESS'
+}
+
+export type PayPalWebhookOutcome =
+  | { action: 'ignore', reason: string }
+  | { action: 'give-up', reason: string } // permanent: caller logs and returns 200
+  | { action: 'complete', captureId: string }
+
+interface PayPalWebhookOrder {
+  id: number
+  provider: string
+  amount: number
+  currency: string
+  status: string
+}
+
+interface PayPalWebhookResource {
+  id?: string
+  status?: string
+  amount?: { value?: string, currency_code?: string }
+}
+
+/**
+ * Pure decision logic for the PAYMENT.CAPTURE.COMPLETED webhook: given the
+ * event type, the capture resource PayPal sent, and whatever order our own
+ * correlation lookup found (or null), decide what to do. All I/O --
+ * correlating the resource to an order, signature verification, DB reads and
+ * writes, logging -- stays in the caller (server/api/webhooks/paypal.post.ts).
+ * This exists because PayPal's signature check is itself an outbound API
+ * call, so unlike the Stripe webhook, this state machine cannot be rehearsed
+ * live with a self-signed event; it can only be unit-tested directly.
+ *
+ * Branch order intentionally matches the already-reviewed handler it was
+ * extracted from (order === null / provider mismatch / already-completed
+ * idempotent-ignore / settlement gate / amount+currency, in that order) --
+ * not the order any prose summary of the rules might list them in.
+ */
+export function decidePayPalWebhookOutcome(
+  eventType: string,
+  resource: PayPalWebhookResource,
+  order: PayPalWebhookOrder | null
+): PayPalWebhookOutcome {
+  // CHECKOUT.ORDER.APPROVED and everything else is deliberately never a
+  // completion trigger -- approval is not captured money. Only a genuine
+  // capture-completed event may complete an order.
+  if (eventType !== 'PAYMENT.CAPTURE.COMPLETED') {
+    return { action: 'ignore', reason: `event type "${eventType}" is not a capture completion` }
+  }
+
+  if (order === null) {
+    // Permanent: the (provider, provider_session_id) association is made
+    // once, synchronously, at checkout-init time, before the buyer can ever
+    // reach approval -- if no row matches now, retrying delivery of the same
+    // event will never make one appear.
+    return { action: 'give-up', reason: `no matching order found for capture ${resource.id}` }
+  }
+  if (order.provider !== 'paypal') {
+    // Permanent: this order will never become a PayPal order on retry.
+    return { action: 'give-up', reason: `order ${order.id} belongs to provider "${order.provider}", refusing paypal capture ${resource.id}` }
+  }
+
+  // Idempotent no-op, not a failure: the return route may have already
+  // completed this order (it races this webhook by design), or this is a
+  // genuine PayPal redelivery of an event we already processed.
+  if (order.status === 'completed') {
+    return { action: 'ignore', reason: `order ${order.id} is already completed` }
+  }
+
+  // Settlement gate: approval is not payment. Only an actually-COMPLETED
+  // capture resource may complete an order.
+  if (resource.status !== 'COMPLETED') {
+    return { action: 'give-up', reason: `capture ${resource.id} for order ${order.id} has status "${resource.status}", not COMPLETED` }
+  }
+
+  const capturedCurrency = resource.amount?.currency_code
+  if (
+    order.currency !== 'EUR'
+    || capturedCurrency !== order.currency
+    || !paypalAmountMatchesOrder(order.amount, resource.amount?.value)
+  ) {
+    // Permanent: the same mismatch recurs on every redelivery of this event.
+    return {
+      action: 'give-up',
+      reason: `amount/currency mismatch for order ${order.id}: expected ${order.amount} ${order.currency}, `
+        + `got ${resource.amount?.value} ${capturedCurrency} (capture ${resource.id})`,
+    }
+  }
+
+  if (!resource.id) {
+    // Defensive: a genuine PAYMENT.CAPTURE.COMPLETED always carries a capture
+    // id in practice, but the type only guarantees it optional, and
+    // `complete` must have one to store as provider_reference.
+    return { action: 'give-up', reason: `capture completed for order ${order.id} but the event carried no capture id` }
+  }
+
+  return { action: 'complete', captureId: resource.id }
 }

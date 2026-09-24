@@ -56,6 +56,17 @@ export default defineEventHandler(async (event) => {
   const itemRedirect = (status: 'success' | 'pending') =>
     `${origin}/browse/${encodeURIComponent(order.slug)}?checkout=${status}`
 
+  // Two return-route hits can race (double-click, back-then-forward): both
+  // read status = 'pending' and both call capture, but PayPal only lets one
+  // capture succeed -- the loser gets a real error (e.g. 422
+  // ORDER_ALREADY_CAPTURED) even though the purchase genuinely succeeded.
+  // Before telling the buyer "pending", check whether a concurrent request
+  // (this one, or the reconciling webhook) already completed it for real.
+  const isNowCompleted = async (): Promise<boolean> => {
+    const recheck = await db.prepare('SELECT status FROM orders WHERE id = ?').bind(order.id).first<{ status: string }>()
+    return recheck?.status === 'completed'
+  }
+
   // Idempotent: the reconciling webhook may have already completed this
   // order (it races this route by design), or the buyer reloaded this link.
   if (order.status === 'completed') {
@@ -79,6 +90,12 @@ export default defineEventHandler(async (event) => {
     // order -- only an actual COMPLETED capture may.
     if (capture.status !== 'COMPLETED') {
       console.error(`[paypal-return] capture status "${capture.status}" (not COMPLETED) for order ${order.id}, paypal order ${paypalToken}`)
+      // A non-COMPLETED response here can be the loser of a capture race
+      // (e.g. PayPal's 422 ORDER_ALREADY_CAPTURED surfaces this way too, via
+      // the catch block below) -- the order may already be genuinely paid.
+      if (await isNowCompleted()) {
+        return sendRedirect(event, itemRedirect('success'))
+      }
       return sendRedirect(event, itemRedirect('pending'))
     }
 
@@ -118,6 +135,13 @@ export default defineEventHandler(async (event) => {
     return sendRedirect(event, itemRedirect('success'))
   } catch (err) {
     console.error(`[paypal-return] unexpected error capturing order ${order.id}: ${err instanceof Error ? err.message : String(err)}`)
+    // The most likely real-world cause is the capture race described above:
+    // a concurrent hit already captured successfully and this request's own
+    // capture call failed (e.g. PayPal's 422 ORDER_ALREADY_CAPTURED) only
+    // because it lost the race, not because the purchase failed.
+    if (await isNowCompleted()) {
+      return sendRedirect(event, itemRedirect('success'))
+    }
     return sendRedirect(event, itemRedirect('pending'))
   }
 })

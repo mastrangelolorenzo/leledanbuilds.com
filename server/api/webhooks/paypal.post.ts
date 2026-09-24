@@ -1,11 +1,12 @@
-import { getPayPalAccessToken, paypalAmountMatchesOrder, verifyPayPalWebhookSignature } from '../../lib/paypal'
+import { decidePayPalWebhookOutcome, getPayPalAccessToken, verifyPayPalWebhookSignature } from '../../lib/paypal'
 
 interface PayPalWebhookEvent {
   event_type: string
-  resource: {
-    id: string
+  resource?: {
+    id?: string
     status?: string
     amount?: { currency_code?: string, value?: string }
+    custom_id?: string
     supplementary_data?: { related_ids?: { order_id?: string } }
   }
 }
@@ -34,11 +35,22 @@ export default defineEventHandler(async (event) => {
   const transmissionSig = getHeader(event, 'paypal-transmission-sig')
 
   if (!transmissionId || !transmissionTime || !certUrl || !authAlgo || !transmissionSig) {
+    // A misconfigured integration (or a probe hitting this URL) could make
+    // this the ONLY trace of every rejected delivery -- never let it be silent.
+    const missing = [
+      !transmissionId && 'paypal-transmission-id',
+      !transmissionTime && 'paypal-transmission-time',
+      !certUrl && 'paypal-cert-url',
+      !authAlgo && 'paypal-auth-algo',
+      !transmissionSig && 'paypal-transmission-sig',
+    ].filter(Boolean).join(', ')
+    console.error(`[paypal-webhook] rejected: missing required header(s): ${missing}`)
     throw createError({ statusCode: 400, statusMessage: 'Missing PayPal webhook headers.' })
   }
 
   const rawBody = await readRawBody(event, 'utf8')
   if (!rawBody) {
+    console.error('[paypal-webhook] rejected: empty request body')
     throw createError({ statusCode: 400, statusMessage: 'Empty request body.' })
   }
 
@@ -55,96 +67,88 @@ export default defineEventHandler(async (event) => {
     rawBody
   )
   if (!valid) {
+    // A misconfigured PAYPAL_WEBHOOK_ID would make PayPal's verify API return
+    // FAILURE for every genuine delivery -- log enough to diagnose that
+    // without ever logging the signature/cert values themselves.
+    let context = 'body was not valid JSON'
+    try {
+      const parsed = JSON.parse(rawBody) as { event_type?: string, resource?: { id?: string } }
+      context = `event_type=${parsed.event_type}, resource_id=${parsed.resource?.id}`
+    } catch {
+      // keep the default context set above
+    }
+    console.error(`[paypal-webhook] rejected: invalid webhook signature (${context})`)
     throw createError({ statusCode: 400, statusMessage: 'Invalid webhook signature.' })
   }
 
   const webhookEvent = JSON.parse(rawBody) as PayPalWebhookEvent
-
-  // CHECKOUT.ORDER.APPROVED and everything else is deliberately never a
-  // completion trigger -- approval is not captured money. Only a genuine
-  // capture-completed event may complete an order.
-  if (webhookEvent.event_type !== 'PAYMENT.CAPTURE.COMPLETED') {
-    return { received: true }
-  }
-
   const resource = webhookEvent.resource
-  const orderToken = resource?.supplementary_data?.related_ids?.order_id
-  if (!orderToken) {
-    console.error(`[paypal-webhook] PAYMENT.CAPTURE.COMPLETED capture ${resource?.id} carries no related order_id`)
-    // Permanent: this event will never carry one on redelivery.
-    return { received: true }
-  }
 
   const db = event.context.cloudflare?.env?.DB
   if (!db) {
-    console.error(`[paypal-webhook] DB binding unavailable handling capture ${resource.id} for paypal order ${orderToken}`)
+    console.error(`[paypal-webhook] DB binding unavailable handling event ${webhookEvent.event_type} (resource ${resource?.id})`)
     throw createError({ statusCode: 503, statusMessage: 'Database unavailable' })
   }
 
-  const order = await db
-    .prepare('SELECT id, provider, amount, currency, status FROM orders WHERE provider = ? AND provider_session_id = ?')
-    .bind('paypal', orderToken)
-    .first<OrderRow>()
+  // Primary correlation key: PayPal's own order id, via related_ids.order_id.
+  // PayPal documents this as present for this flow but types it optional, and
+  // it can't be confirmed against a real delivery without sandbox credentials
+  // -- so if it's ever absent, fall back to custom_id (our own order id,
+  // set at creation in server/api/checkout/paypal.post.ts and echoed back by
+  // PayPal onto the capture resource) before giving up. The webhook is the
+  // safety net for a return route that captured but lost its UPDATE, so
+  // losing correlation entirely here is the "customer paid, nobody ever
+  // finds out" failure mode -- worth a second key.
+  const relatedOrderId = resource?.supplementary_data?.related_ids?.order_id
+  const customOrderId = resource?.custom_id !== undefined ? Number(resource.custom_id) : NaN
 
-  if (!order) {
-    // Permanent: the (provider, provider_session_id) association is made
-    // once, synchronously, at checkout-init time, before the buyer can ever
-    // reach approval -- if no row has this PayPal order id now, retrying
-    // delivery of the same event will never make one appear.
-    console.error(`[paypal-webhook] no order found for paypal order ${orderToken} (capture ${resource.id})`)
-    return { received: true }
-  }
-  if (order.provider !== 'paypal') {
-    console.error(`[paypal-webhook] order ${order.id} belongs to provider "${order.provider}", refusing paypal capture ${resource.id}`)
-    // Permanent: this order will never become a PayPal order on retry.
-    return { received: true }
-  }
-
-  // Idempotent no-op, not a failure: the return route may have already
-  // completed this order (it races this webhook by design), or this is a
-  // genuine PayPal redelivery of an event we already processed.
-  if (order.status === 'completed') {
-    return { received: true }
-  }
-
-  if (resource.status !== 'COMPLETED') {
-    console.error(`[paypal-webhook] capture ${resource.id} for order ${order.id} has status "${resource.status}", not COMPLETED`)
-    // Permanent for this specific event; a genuine completion arrives as its
-    // own PAYMENT.CAPTURE.COMPLETED event later if the capture eventually succeeds.
-    return { received: true }
+  let order: OrderRow | null = null
+  if (relatedOrderId) {
+    order = await db
+      .prepare('SELECT id, provider, amount, currency, status FROM orders WHERE provider = ? AND provider_session_id = ?')
+      .bind('paypal', relatedOrderId)
+      .first<OrderRow>()
+  } else if (Number.isInteger(customOrderId)) {
+    order = await db
+      .prepare('SELECT id, provider, amount, currency, status FROM orders WHERE provider = ? AND id = ?')
+      .bind('paypal', customOrderId)
+      .first<OrderRow>()
   }
 
-  const capturedCurrency = resource.amount?.currency_code
-  if (
-    order.currency !== 'EUR'
-    || capturedCurrency !== order.currency
-    || !paypalAmountMatchesOrder(order.amount, resource.amount?.value)
-  ) {
-    console.error(
-      `[paypal-webhook] amount/currency mismatch for order ${order.id}: expected ${order.amount} ${order.currency}, `
-      + `got ${resource.amount?.value} ${capturedCurrency} (capture ${resource.id})`
-    )
-    // Permanent: the same mismatch recurs on every redelivery of this event.
+  const outcome = decidePayPalWebhookOutcome(webhookEvent.event_type, resource ?? {}, order)
+
+  if (outcome.action === 'ignore') {
     return { received: true }
   }
 
+  if (outcome.action === 'give-up') {
+    const correlation = relatedOrderId
+      ? `related_ids.order_id=${relatedOrderId}`
+      : Number.isInteger(customOrderId)
+        ? `custom_id=${customOrderId}`
+        : 'no usable correlation key (neither related_ids.order_id nor custom_id present)'
+    console.error(`[paypal-webhook] give up: ${outcome.reason} (${correlation}, event ${webhookEvent.event_type})`)
+    return { received: true }
+  }
+
+  // outcome.action === 'complete'
   const now = new Date().toISOString()
   const result = await db
     .prepare(
       `UPDATE orders SET status = 'completed', provider_reference = ?, updated_at = ?
        WHERE id = ? AND provider = 'paypal' AND status != 'completed'`
     )
-    .bind(resource.id, now, order.id)
+    .bind(outcome.captureId, now, order!.id)
     .run()
 
   if (!result.meta?.changes) {
     // Zero rows can mean a concurrent completion (the return route won the
     // race) -- re-check before treating this as a failure.
-    const recheck = await db.prepare('SELECT status FROM orders WHERE id = ?').bind(order.id).first<{ status: string }>()
+    const recheck = await db.prepare('SELECT status FROM orders WHERE id = ?').bind(order!.id).first<{ status: string }>()
     if (recheck?.status === 'completed') {
       return { received: true }
     }
-    console.error(`[paypal-webhook] completion UPDATE affected 0 rows for order ${order.id} (recheck status: ${recheck?.status})`)
+    console.error(`[paypal-webhook] completion UPDATE affected 0 rows for order ${order!.id} (recheck status: ${recheck?.status})`)
     // Ambiguous, not provably permanent -- let PayPal retry.
     throw createError({ statusCode: 500, statusMessage: 'Order completion failed.' })
   }

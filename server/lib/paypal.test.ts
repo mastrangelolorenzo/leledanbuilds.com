@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   capturePayPalOrder,
   createPayPalOrder,
+  decidePayPalWebhookOutcome,
   getPayPalAccessToken,
   paypalAmountMatchesOrder,
   verifyPayPalWebhookSignature,
@@ -172,6 +173,20 @@ describe('paypalAmountMatchesOrder', () => {
     // regression the Stripe side hit; rounding on both sides must absorb it.
     expect(paypalAmountMatchesOrder(19.99, (19.99).toFixed(2))).toBe(true)
   })
+
+  // The test above compares 19.99 against Number("19.99") * 100 -- the same
+  // underlying float multiplied the same way on both sides, so it would
+  // still pass with Math.round deleted entirely and proves nothing about
+  // rounding specifically. This one is genuinely discriminating: the admin
+  // price field only validates `typeof price === 'number'`, so a
+  // three-decimal price like 19.999 is reachable, and PayPal is quoted the
+  // *rounded* "20.00" (item.price.toFixed(2) in checkout/paypal.post.ts)
+  // while orders.amount stores the raw 19.999. Only rounding both sides
+  // before comparing keeps that correctly-paid order from being rejected --
+  // without Math.round, 19.999 * 100 = 1999.9000000000001 !== 2000.
+  it('matches when the quoted string was rounded to cents but the stored price was not', () => {
+    expect(paypalAmountMatchesOrder(19.999, '20.00')).toBe(true)
+  })
 })
 
 describe('verifyPayPalWebhookSignature', () => {
@@ -204,5 +219,95 @@ describe('verifyPayPalWebhookSignature', () => {
     vi.stubGlobal('fetch', fetchMock)
     expect(await verifyPayPalWebhookSignature('https://api-m.sandbox.paypal.com', 'tok', 'wh_123', headers, 'not-json')).toBe(false)
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+// Fix round 1, item 5: the webhook's decision logic has no self-signing
+// substitute the way Stripe's does (PayPal's signature check is itself an
+// outbound API call), so this is the only way to exercise every branch.
+// Fixtures represent a fully-valid PAYMENT.CAPTURE.COMPLETED capture and a
+// matching, still-pending order; each test overrides exactly the field(s)
+// under test.
+describe('decidePayPalWebhookOutcome', () => {
+  const validResource = {
+    id: 'CAPTURE_1',
+    status: 'COMPLETED',
+    amount: { value: '19.99', currency_code: 'EUR' },
+  }
+  const validOrder = {
+    id: 42,
+    provider: 'paypal',
+    amount: 19.99,
+    currency: 'EUR',
+    status: 'pending',
+  }
+
+  it('ignores any event_type other than PAYMENT.CAPTURE.COMPLETED (settlement gate: approval is not payment)', () => {
+    const outcome = decidePayPalWebhookOutcome('CHECKOUT.ORDER.APPROVED', validResource, validOrder)
+    expect(outcome.action).toBe('ignore')
+  })
+
+  it('gives up when no order was found for this capture', () => {
+    const outcome = decidePayPalWebhookOutcome('PAYMENT.CAPTURE.COMPLETED', validResource, null)
+    expect(outcome.action).toBe('give-up')
+  })
+
+  it('gives up when the order belongs to a different provider', () => {
+    const outcome = decidePayPalWebhookOutcome('PAYMENT.CAPTURE.COMPLETED', validResource, { ...validOrder, provider: 'stripe' })
+    expect(outcome.action).toBe('give-up')
+  })
+
+  it('ignores (idempotent no-op) when the order is already completed', () => {
+    const outcome = decidePayPalWebhookOutcome('PAYMENT.CAPTURE.COMPLETED', validResource, { ...validOrder, status: 'completed' })
+    expect(outcome.action).toBe('ignore')
+  })
+
+  it('gives up on a non-COMPLETED capture status (settlement gate: approval is not payment)', () => {
+    const outcome = decidePayPalWebhookOutcome('PAYMENT.CAPTURE.COMPLETED', { ...validResource, status: 'PENDING' }, validOrder)
+    expect(outcome.action).toBe('give-up')
+  })
+
+  it('gives up when the order currency is not EUR', () => {
+    const outcome = decidePayPalWebhookOutcome('PAYMENT.CAPTURE.COMPLETED', validResource, { ...validOrder, currency: 'USD' })
+    expect(outcome.action).toBe('give-up')
+  })
+
+  it('gives up when the captured currency does not match the order currency', () => {
+    const outcome = decidePayPalWebhookOutcome(
+      'PAYMENT.CAPTURE.COMPLETED',
+      { ...validResource, amount: { value: '19.99', currency_code: 'USD' } },
+      validOrder
+    )
+    expect(outcome.action).toBe('give-up')
+  })
+
+  it('gives up when the captured amount does not match the order amount', () => {
+    const outcome = decidePayPalWebhookOutcome(
+      'PAYMENT.CAPTURE.COMPLETED',
+      { ...validResource, amount: { value: '9.99', currency_code: 'EUR' } },
+      validOrder
+    )
+    expect(outcome.action).toBe('give-up')
+  })
+
+  it('gives up when a COMPLETED capture carries no capture id to store', () => {
+    const outcome = decidePayPalWebhookOutcome('PAYMENT.CAPTURE.COMPLETED', { ...validResource, id: undefined }, validOrder)
+    expect(outcome.action).toBe('give-up')
+  })
+
+  it('completes when the event is a genuine, matching, COMPLETED capture for a pending paypal order', () => {
+    const outcome = decidePayPalWebhookOutcome('PAYMENT.CAPTURE.COMPLETED', validResource, validOrder)
+    expect(outcome).toEqual({ action: 'complete', captureId: 'CAPTURE_1' })
+  })
+
+  it('completes for a non-integer-euro price using the same rounded-cents comparison as paypalAmountMatchesOrder', () => {
+    // 19.999 stored raw, quoted to PayPal rounded to "20.00" -- see the
+    // paypalAmountMatchesOrder discriminating test above.
+    const outcome = decidePayPalWebhookOutcome(
+      'PAYMENT.CAPTURE.COMPLETED',
+      { ...validResource, amount: { value: '20.00', currency_code: 'EUR' } },
+      { ...validOrder, amount: 19.999 }
+    )
+    expect(outcome.action).toBe('complete')
   })
 })

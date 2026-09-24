@@ -28,16 +28,31 @@ export default defineEventHandler(async (event) => {
 
   const signatureHeader = getHeader(event, 'stripe-signature')
   if (!signatureHeader) {
+    // A misconfigured integration (or a probe hitting this URL) could make
+    // this the ONLY trace of every rejected delivery -- never let it be silent.
+    console.error('[stripe-webhook] rejected: missing Stripe-Signature header')
     throw createError({ statusCode: 400, statusMessage: 'Missing Stripe-Signature header.' })
   }
 
   const rawBody = await readRawBody(event, 'utf8')
   if (!rawBody) {
+    console.error('[stripe-webhook] rejected: empty request body')
     throw createError({ statusCode: 400, statusMessage: 'Empty request body.' })
   }
 
   const valid = await verifyStripeSignature(rawBody, signatureHeader, webhookSecret)
   if (!valid) {
+    // A misconfigured STRIPE_WEBHOOK_SECRET would make every genuine delivery
+    // fail this check -- log enough to diagnose that without ever logging
+    // the signature header or secret itself.
+    let context = 'body was not valid JSON'
+    try {
+      const parsed = JSON.parse(rawBody) as { type?: string, data?: { object?: { id?: string } } }
+      context = `type=${parsed.type}, object_id=${parsed.data?.object?.id}`
+    } catch {
+      // keep the default context set above
+    }
+    console.error(`[stripe-webhook] rejected: invalid signature (${context})`)
     throw createError({ statusCode: 400, statusMessage: 'Invalid signature.' })
   }
 

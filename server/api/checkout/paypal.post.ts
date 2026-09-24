@@ -70,6 +70,11 @@ export default defineEventHandler(async (event) => {
     // `token` and requires them to match the same row (see paypal-return.get.ts).
     returnUrl: `${origin}/api/checkout/paypal-return?order_id=${orderId}`,
     cancelUrl: `${origin}/browse/${encodeURIComponent(item.slug)}?checkout=cancelled`,
+    // Our own order id is already known at this point (the row above is
+    // inserted before this call), so it can ride along as custom_id -- the
+    // webhook's fallback correlation key if related_ids.order_id is ever
+    // absent on the capture event.
+    customId: String(orderId),
   })
 
   await db
