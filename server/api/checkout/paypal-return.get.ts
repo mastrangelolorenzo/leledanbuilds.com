@@ -63,8 +63,19 @@ export default defineEventHandler(async (event) => {
   // Before telling the buyer "pending", check whether a concurrent request
   // (this one, or the reconciling webhook) already completed it for real.
   const isNowCompleted = async (): Promise<boolean> => {
-    const recheck = await db.prepare('SELECT status FROM orders WHERE id = ?').bind(order.id).first<{ status: string }>()
-    return recheck?.status === 'completed'
+    // Must never throw: it is called from inside the catch block below, and
+    // if D1 is what failed in the first place, a throwing recheck here would
+    // escape with no outer handler -- a raw 500 at a paying customer's
+    // browser, exactly what this route's header comment promises never
+    // happens. "Could not confirm completion" and "not completed" lead to
+    // the same friendly pending redirect either way.
+    try {
+      const recheck = await db.prepare('SELECT status FROM orders WHERE id = ?').bind(order.id).first<{ status: string }>()
+      return recheck?.status === 'completed'
+    } catch (err) {
+      console.error(`[paypal-return] could not re-check order ${order.id} status: ${err instanceof Error ? err.message : String(err)}`)
+      return false
+    }
   }
 
   // Idempotent: the reconciling webhook may have already completed this

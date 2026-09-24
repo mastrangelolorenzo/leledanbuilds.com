@@ -101,18 +101,36 @@ export default defineEventHandler(async (event) => {
   // finds out" failure mode -- worth a second key.
   const relatedOrderId = resource?.supplementary_data?.related_ids?.order_id
   const customOrderId = resource?.custom_id !== undefined ? Number(resource.custom_id) : NaN
+  const customOrderIdUsable = Number.isInteger(customOrderId)
 
   let order: OrderRow | null = null
+  let resolvedVia: 'related_ids.order_id' | 'custom_id' | null = null
+
   if (relatedOrderId) {
     order = await db
       .prepare('SELECT id, provider, amount, currency, status FROM orders WHERE provider = ? AND provider_session_id = ?')
       .bind('paypal', relatedOrderId)
       .first<OrderRow>()
-  } else if (Number.isInteger(customOrderId)) {
+    if (order) resolvedVia = 'related_ids.order_id'
+  }
+
+  // A primary key that resolves to no row is exactly as unusable as a
+  // missing one -- a real capture can arrive with a stale/unexpected
+  // related_ids.order_id while custom_id (our own id) still resolves fine.
+  // Only give up when BOTH are unusable, so try the fallback whenever the
+  // first attempt didn't already find the order, not only when the primary
+  // key was absent to begin with.
+  if (!order && customOrderIdUsable) {
     order = await db
       .prepare('SELECT id, provider, amount, currency, status FROM orders WHERE provider = ? AND id = ?')
       .bind('paypal', customOrderId)
       .first<OrderRow>()
+    if (order) resolvedVia = 'custom_id'
+  }
+
+  if (order && resolvedVia === 'custom_id' && relatedOrderId) {
+    // Visibility into production: the primary key was present but wrong.
+    console.error(`[paypal-webhook] correlated via custom_id fallback: related_ids.order_id=${relatedOrderId} matched no order, custom_id=${customOrderId} did (order ${order.id})`)
   }
 
   const outcome = decidePayPalWebhookOutcome(webhookEvent.event_type, resource ?? {}, order)
@@ -122,11 +140,24 @@ export default defineEventHandler(async (event) => {
   }
 
   if (outcome.action === 'give-up') {
-    const correlation = relatedOrderId
-      ? `related_ids.order_id=${relatedOrderId}`
-      : Number.isInteger(customOrderId)
-        ? `custom_id=${customOrderId}`
-        : 'no usable correlation key (neither related_ids.order_id nor custom_id present)'
+    // Distinguish "an order was found via one of the keys, but give-up was
+    // for some other reason (provider/status/amount/currency)" from "no key
+    // resolved anything" -- the latter is the only case where "neither
+    // matched an order" is actually true.
+    let correlation: string
+    if (order) {
+      correlation = resolvedVia === 'custom_id'
+        ? `resolved via custom_id=${customOrderId} (order ${order.id})`
+        : `resolved via related_ids.order_id=${relatedOrderId} (order ${order.id})`
+    } else if (relatedOrderId && customOrderIdUsable) {
+      correlation = `related_ids.order_id=${relatedOrderId} and custom_id=${customOrderId}, neither matched an order`
+    } else if (relatedOrderId) {
+      correlation = `related_ids.order_id=${relatedOrderId}, no matching order`
+    } else if (customOrderIdUsable) {
+      correlation = `custom_id=${customOrderId}, no matching order`
+    } else {
+      correlation = 'no usable correlation key (neither related_ids.order_id nor custom_id present)'
+    }
     console.error(`[paypal-webhook] give up: ${outcome.reason} (${correlation}, event ${webhookEvent.event_type})`)
     return { received: true }
   }
