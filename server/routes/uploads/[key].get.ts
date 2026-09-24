@@ -9,6 +9,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing key.' })
   }
 
+  let decodedKey: string
+  try {
+    decodedKey = decodeURIComponent(key)
+  } catch {
+    throw createError({ statusCode: 404, statusMessage: 'Not found.' })
+  }
+  if (decodedKey.includes('/')) {
+    throw createError({ statusCode: 404, statusMessage: 'Not found.' })
+  }
+
   const object = await bucket.get(key)
   if (!object) {
     throw createError({ statusCode: 404, statusMessage: 'Not found.' })

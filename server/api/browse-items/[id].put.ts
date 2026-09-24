@@ -43,13 +43,15 @@ export default defineEventHandler(async (event) => {
   const theme = await ensureTaxonomyTerm(db, 'themes', body.theme)
   const category = await ensureTaxonomyTerm(db, 'categories', body.category)
 
+  const hasDownloadKey = !!body && typeof body === 'object' && 'download_key' in body
+
   try {
     const result = await db
       .prepare(
-        `UPDATE browse_items SET slug = ?, title = ?, image_url = ?, price = ?, difficulty = ?, build_type = ?, theme = ?, category = ?, released = ?, description = ?, download_key = ?, updated_at = ?
+        `UPDATE browse_items SET slug = ?, title = ?, image_url = ?, price = ?, difficulty = ?, build_type = ?, theme = ?, category = ?, released = ?, description = ?, download_key = CASE WHEN ? THEN ? ELSE download_key END, updated_at = ?
          WHERE id = ?`
       )
-      .bind(slug, body.title, body.image_url, body.price, body.difficulty, buildType, theme, category, body.released, body.description, body.download_key ?? null, new Date().toISOString(), id)
+      .bind(slug, body.title, body.image_url, body.price, body.difficulty, buildType, theme, category, body.released, body.description, hasDownloadKey ? 1 : 0, body.download_key ?? null, new Date().toISOString(), id)
       .run()
 
     if (result.meta.changes === 0) {
