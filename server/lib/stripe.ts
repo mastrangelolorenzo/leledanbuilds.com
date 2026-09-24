@@ -1,3 +1,5 @@
+import { createError } from 'h3'
+
 export async function createStripeCheckoutSession(
   secretKey: string,
   params: {
@@ -27,13 +29,15 @@ export async function createStripeCheckoutSession(
     headers: {
       Authorization: `Bearer ${secretKey}`,
       'Content-Type': 'application/x-www-form-urlencoded',
+      'Stripe-Version': '2025-08-27.basil',
     },
     body: body.toString(),
   })
 
   if (!res.ok) {
     const errBody = await res.text()
-    throw new Error(`Stripe checkout session creation failed (${res.status}): ${errBody}`)
+    console.error(`[stripe] checkout session creation failed (${res.status}): ${errBody}`)
+    throw createError({ statusCode: 502, statusMessage: 'Payment provider error.' })
   }
 
   const data = await res.json() as { id: string, url: string }
@@ -62,19 +66,29 @@ export async function verifyStripeSignature(
   secret: string,
   toleranceSeconds = 300
 ): Promise<boolean> {
-  const parts = signatureHeader.split(',').reduce<Record<string, string>>((acc, part) => {
-    const [key, value] = part.split('=')
-    if (key && value) acc[key] = value
-    return acc
-  }, {})
+  let timestamp: string | undefined
+  const signatures: string[] = []
 
-  const timestamp = parts.t
-  const v1 = parts.v1
-  if (!timestamp || !v1) return false
+  for (const part of signatureHeader.split(',')) {
+    const index = part.indexOf('=')
+    if (index === -1) continue
+    const key = part.slice(0, index).trim()
+    const value = part.slice(index + 1).trim()
+    if (!value) continue
+    if (key === 't') timestamp = value
+    // Stripe sends one v1 per currently-active endpoint secret, so during a
+    // secret rotation there are several and any one of them may be ours.
+    else if (key === 'v1') signatures.push(value)
+  }
+
+  if (!timestamp || signatures.length === 0) return false
+
+  const timestampSeconds = Number(timestamp)
+  if (!Number.isFinite(timestampSeconds)) return false
 
   const nowSeconds = Math.floor(Date.now() / 1000)
-  if (Math.abs(nowSeconds - Number(timestamp)) > toleranceSeconds) return false
+  if (Math.abs(nowSeconds - timestampSeconds) > toleranceSeconds) return false
 
   const expected = await hmacSha256Hex(secret, `${timestamp}.${payload}`)
-  return timingSafeEqual(expected, v1)
+  return signatures.some(signature => timingSafeEqual(expected, signature))
 }

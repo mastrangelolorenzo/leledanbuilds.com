@@ -39,4 +39,21 @@ describe('verifyStripeSignature', () => {
     const v1 = await signPayload(secret, timestamp, payload)
     expect(await verifyStripeSignature('{"id":"evt_999"}', `t=${timestamp},v1=${v1}`, secret)).toBe(false)
   })
+
+  it('accepts when the header carries several v1 values and ours is not the last (secret rotation)', async () => {
+    const timestamp = Math.floor(Date.now() / 1000)
+    const ours = await signPayload(secret, timestamp, payload)
+    const otherSecret = await signPayload('other-active-secret', timestamp, payload)
+    expect(await verifyStripeSignature(payload, `t=${timestamp},v1=${ours},v1=${otherSecret}`, secret)).toBe(true)
+  })
+
+  it('rejects a non-numeric timestamp', async () => {
+    expect(await verifyStripeSignature(payload, 't=not-a-number,v1=abcdef0123456789', secret)).toBe(false)
+  })
+
+  it('accepts a header with whitespace after the commas', async () => {
+    const timestamp = Math.floor(Date.now() / 1000)
+    const v1 = await signPayload(secret, timestamp, payload)
+    expect(await verifyStripeSignature(payload, `t=${timestamp}, v1=${v1}`, secret)).toBe(true)
+  })
 })

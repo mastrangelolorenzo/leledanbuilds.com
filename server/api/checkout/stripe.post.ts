@@ -46,6 +46,8 @@ export default defineEventHandler(async (event) => {
   const origin = getPublicOrigin(event)
   const now = new Date().toISOString()
 
+  // orders.amount is stored in whole euros (matching browse_items.price);
+  // Stripe is charged in cents below via Math.round(item.price * 100).
   const orderResult = await db
     .prepare(
       `INSERT INTO orders (user_id, browse_item_id, provider, provider_session_id, amount, currency, status, created_at, updated_at)
@@ -61,8 +63,8 @@ export default defineEventHandler(async (event) => {
     unitAmount: Math.round(item.price * 100),
     currency: 'eur',
     quantity: 1,
-    successUrl: `${origin}/browse/${item.slug}?checkout=success`,
-    cancelUrl: `${origin}/browse/${item.slug}?checkout=cancelled`,
+    successUrl: `${origin}/browse/${encodeURIComponent(item.slug)}?checkout=success`,
+    cancelUrl: `${origin}/browse/${encodeURIComponent(item.slug)}?checkout=cancelled`,
     metadata: { order_id: String(orderId) },
   })
 
