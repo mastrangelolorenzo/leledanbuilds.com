@@ -32,6 +32,10 @@ export default defineEventHandler(async (event) => {
   if (!clientId || !clientSecret || !apiBase) {
     throw createError({ statusCode: 503, statusMessage: 'PayPal is not configured.' })
   }
+  const bucket = event.context.cloudflare?.env?.UPLOADS
+  if (!bucket) {
+    throw createError({ statusCode: 503, statusMessage: 'Upload storage unavailable' })
+  }
 
   const item = await db
     .prepare('SELECT id, slug, title, price, download_key FROM browse_items WHERE id = ?')
@@ -42,6 +46,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Item not found.' })
   }
   if (!item.download_key) {
+    throw createError({ statusCode: 409, statusMessage: 'This item is not yet available for purchase.' })
+  }
+
+  // The DB row can point at an R2 object that was deleted (or never
+  // uploaded successfully) -- confirm it genuinely exists before ever
+  // taking the customer's money, not just that download_key is non-empty.
+  const deliverable = await bucket.head(item.download_key)
+  if (!deliverable) {
+    console.error(`[paypal-checkout] download_key "${item.download_key}" for item ${item.id} not found in R2, refusing checkout`)
     throw createError({ statusCode: 409, statusMessage: 'This item is not yet available for purchase.' })
   }
 
@@ -62,7 +75,15 @@ export default defineEventHandler(async (event) => {
 
   const accessToken = await getPayPalAccessToken(apiBase, clientId, clientSecret)
   const paypalOrder = await createPayPalOrder(apiBase, accessToken, {
-    amount: item.price.toFixed(2),
+    // Quote from the same integer cents paypalAmountMatchesOrder verifies
+    // with (Math.round(price * 100)) -- NOT item.price.toFixed(2) directly.
+    // toFixed(2) rounds the exact binary value of the price, while the
+    // verifier rounds the *product* price*100; for any price of the form
+    // x.xx5 those two disagree by a cent (39.955 -> toFixed gives "39.95",
+    // this gives "39.96"). Quoting the wrong one let PayPal capture money
+    // that the return route and webhook would then both refuse forever. See
+    // paypalAmountMatchesOrder in server/lib/paypal.ts.
+    amount: (Math.round(item.price * 100) / 100).toFixed(2),
     currency: 'EUR',
     title: item.title,
     // PayPal appends its own `token` (= this PayPal order id) and `PayerID`

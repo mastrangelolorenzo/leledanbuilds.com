@@ -309,6 +309,34 @@ use the Stripe CLI (`stripe listen --forward-to <local-url>/api/webhooks/stripe`
 for Stripe, and a tunnel (ngrok/cloudflared) plus PayPal's sandbox webhook
 simulator for PayPal.
 
+`PUBLIC_ORIGIN` (see "Email verification" below for its general purpose) is
+**required in production** for payments specifically: it determines both
+Stripe's success/cancel URLs and PayPal's return URL. Leaving it unset in
+production would let those redirect URLs be influenced by a client-supplied
+`Host` header — it's optional only for local dev, where it falls back to
+the request's own origin.
+
+#### Reconciling stuck orders
+
+There is currently no admin UI for this — an order can be legitimately
+stuck `pending` (buyer abandoned checkout, chose a delayed payment method
+and hasn't settled yet) or stuck due to a bug (a mismatch the webhook/return
+route refuses to resolve). To find candidates for manual investigation:
+
+```sql
+SELECT * FROM orders WHERE status = 'pending' AND created_at < datetime('now','-1 hour');
+```
+
+Alert on these log markers, all of which indicate a payment that will never
+complete on its own: `[stripe-webhook] amount mismatch`, any `[paypal-webhook]`
+line starting with "give up", and any `[paypal-return]` line mentioning
+"mismatch".
+
+Refunds and chargebacks do **not** currently revoke download access — an
+order marked `completed` stays `completed`, and its buyer keeps their
+download button at `/app/purchases`, regardless of what happens at the
+provider afterward.
+
 ### Local dev
 
 1. Copy `.dev.vars.example` to `.dev.vars` and fill in `SESSION_SECRET`

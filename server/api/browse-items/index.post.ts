@@ -1,5 +1,5 @@
 import { requireAdmin } from '../../utils/requireAdmin'
-import { slugify, isUniqueConstraintError } from '../../utils/postValidation'
+import { slugify, isUniqueConstraintError, isValidPrice, isValidDownloadKey } from '../../utils/postValidation'
 import { ensureTaxonomyTerm } from '../../utils/taxonomy'
 
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Expert'] as const
@@ -23,6 +23,12 @@ export default defineEventHandler(async (event) => {
 
   if (!body.title || !body.image_url || !body.build_type || !body.theme || !body.category || !body.released || !body.description || typeof body.price !== 'number') {
     throw createError({ statusCode: 400, statusMessage: 'title, image_url, price, build_type, theme, category, released and description are required.' })
+  }
+  if (!isValidPrice(body.price)) {
+    throw createError({ statusCode: 400, statusMessage: 'price must be a non-negative number with at most 2 decimal places.' })
+  }
+  if (body.download_key != null && !isValidDownloadKey(body.download_key)) {
+    throw createError({ statusCode: 400, statusMessage: 'download_key has an invalid format.' })
   }
   if (!DIFFICULTIES.includes(body.difficulty as typeof DIFFICULTIES[number])) {
     throw createError({ statusCode: 400, statusMessage: `difficulty must be one of: ${DIFFICULTIES.join(', ')}.` })

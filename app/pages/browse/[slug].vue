@@ -4,8 +4,8 @@
 
     <div v-if="route.query.checkout === 'success'" class="max-w-6xl mx-auto px-6 md:px-10 lg:px-16 pt-8">
       <div class="bg-primary/10 border border-primary/30 text-primary rounded-xl px-4 py-3 text-sm font-semibold">
-        Payment received! Your download will appear in
-        <NuxtLink to="/app/purchases" class="underline">your dashboard</NuxtLink> shortly.
+        Thanks for your purchase! We're confirming your payment now — it will appear in
+        <NuxtLink to="/app/purchases" class="underline">your dashboard</NuxtLink> as soon as it clears.
       </div>
     </div>
     <div v-else-if="route.query.checkout === 'pending'" class="max-w-6xl mx-auto px-6 md:px-10 lg:px-16 pt-8">

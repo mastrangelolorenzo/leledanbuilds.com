@@ -187,6 +187,32 @@ describe('paypalAmountMatchesOrder', () => {
   it('matches when the quoted string was rounded to cents but the stored price was not', () => {
     expect(paypalAmountMatchesOrder(19.999, '20.00')).toBe(true)
   })
+
+  // C1 regression: at an x.xx5 price, item.price.toFixed(2) (the old,
+  // buggy quoting in server/api/checkout/paypal.post.ts) and
+  // Math.round(price * 100) (what this function verifies with) round the
+  // same number in two different directions. This proves both halves of
+  // the bug directly: the old quoting really did disagree with the
+  // verifier, and the fixed quoting -- (Math.round(price * 100) / 100
+  // ).toFixed(2), now used at the checkout call site -- agrees with it.
+  it('at an x.xx5 price, disagrees with the old toFixed(2) quoting but agrees with the corrected cents-based quoting', () => {
+    const price = 39.955
+    const oldQuoted = price.toFixed(2) // the bug: PayPal would have been quoted "39.95"
+    const newQuoted = (Math.round(price * 100) / 100).toFixed(2) // the fix: "39.96"
+
+    expect(oldQuoted).toBe('39.95')
+    expect(newQuoted).toBe('39.96')
+    expect(paypalAmountMatchesOrder(price, oldQuoted)).toBe(false)
+    expect(paypalAmountMatchesOrder(price, newQuoted)).toBe(true)
+  })
+
+  // M9: Number(null) is 0, so without an explicit type check a capture that
+  // reported NO amount at all (paidValue: null) would "match" a €0 order --
+  // treating "we don't know what was paid" as "definitely 0 was paid".
+  it('never matches a non-string paid value, even against a zero-amount order', () => {
+    expect(paypalAmountMatchesOrder(0, null)).toBe(false)
+    expect(paypalAmountMatchesOrder(0, undefined)).toBe(false)
+  })
 })
 
 describe('verifyPayPalWebhookSignature', () => {

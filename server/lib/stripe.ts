@@ -35,8 +35,18 @@ export async function createStripeCheckoutSession(
   })
 
   if (!res.ok) {
-    const errBody = await res.text()
-    console.error(`[stripe] checkout session creation failed (${res.status}): ${errBody}`)
+    // Never log the raw upstream body -- it can carry customer-identifying
+    // data from what we sent (e.g. the product title). Status plus, if
+    // cheaply parseable, Stripe's own error code/type is enough to diagnose
+    // from logs without that risk (matches the PayPal lib's status-only logging).
+    let errorCode: string | undefined
+    try {
+      const errBody = await res.json() as { error?: { code?: string, type?: string } }
+      errorCode = errBody.error?.code ?? errBody.error?.type
+    } catch {
+      // Not parseable JSON -- nothing cheap to extract, log status only.
+    }
+    console.error(`[stripe] checkout session creation failed (status ${res.status}${errorCode ? `, code=${errorCode}` : ''})`)
     throw createError({ statusCode: 502, statusMessage: 'Payment provider error.' })
   }
 

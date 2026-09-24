@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Not found.' })
   }
 
-  const object = await bucket.get(key)
+  const object = await bucket.get(decodedKey)
   if (!object) {
     throw createError({ statusCode: 404, statusMessage: 'Not found.' })
   }

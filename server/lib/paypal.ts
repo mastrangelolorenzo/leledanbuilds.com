@@ -116,9 +116,13 @@ export async function capturePayPalOrder(apiBase: string, accessToken: string, o
  * rejected forever; rounding both sides avoids repeating it.
  *
  * A non-finite paid value (missing, non-numeric, or otherwise unparseable)
- * is treated as a mismatch, never as a pass.
+ * is treated as a mismatch, never as a pass. paidValue must be a string --
+ * checked explicitly before any coercion, because `Number(null)` is `0`,
+ * and without this check a genuinely amount-less capture (paidValue: null)
+ * would silently "match" a €0 order rather than being rejected as unusable.
  */
 export function paypalAmountMatchesOrder(orderAmountEuros: number, paidValue: unknown): boolean {
+  if (typeof paidValue !== 'string') return false
   const expectedCents = Math.round(orderAmountEuros * 100)
   const paidCents = Math.round(Number(paidValue) * 100)
   if (!Number.isFinite(paidCents)) return false

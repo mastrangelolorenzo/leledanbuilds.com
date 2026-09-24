@@ -8,6 +8,7 @@ interface StripeEvent {
       payment_status?: string
       payment_intent?: string
       amount_total?: number
+      currency?: string
       metadata?: { order_id?: string }
     }
   }
@@ -17,6 +18,7 @@ interface OrderRow {
   id: number
   provider: string
   amount: number
+  currency: string
   status: string
 }
 
@@ -83,7 +85,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const order = await db
-    .prepare('SELECT id, provider, amount, status FROM orders WHERE id = ?')
+    .prepare('SELECT id, provider, amount, currency, status FROM orders WHERE id = ?')
     .bind(orderId)
     .first<OrderRow>()
 
@@ -118,13 +120,26 @@ export default defineEventHandler(async (event) => {
     return { received: true }
   }
 
+  // Symmetric with the PayPal side (which treats an unreadable amount as a
+  // mismatch, never a pass): a missing/non-numeric amount_total used to
+  // skip this guard entirely and let the order complete unverified. Also
+  // verify currency, which was never checked at all -- Stripe returns it
+  // lowercase ("eur"), the column stores it uppercase ("EUR"), hence the
+  // case-insensitive compare.
   const expectedAmountInCents = Math.round(order.amount * 100)
-  if (typeof session.amount_total === 'number' && session.amount_total !== expectedAmountInCents) {
+  const amountMatches = typeof session.amount_total === 'number' && session.amount_total === expectedAmountInCents
+  const currencyMatches = typeof session.currency === 'string' && session.currency.toUpperCase() === order.currency.toUpperCase()
+  if (!amountMatches || !currencyMatches) {
+    // Marker kept as "amount mismatch" (even when only currency disagrees)
+    // because the README's reconciliation section greps for this exact
+    // string -- see the "Purchases" section.
     console.error(
-      `[stripe-webhook] amount mismatch on order ${orderId}: session charged ${session.amount_total}, expected ${expectedAmountInCents}`
+      `[stripe-webhook] amount mismatch on order ${orderId}: session charged ${session.amount_total} ${session.currency ?? '(missing)'}, `
+      + `expected ${expectedAmountInCents} ${order.currency}`
     )
-    // Amount mismatch is permanent: retrying the same event can never make it
-    // match. Log loudly, but don't burn the endpoint's health retrying forever.
+    // Amount/currency mismatch is permanent: retrying the same event can
+    // never make it match. Log loudly, but don't burn the endpoint's health
+    // retrying forever.
     return { received: true }
   }
 

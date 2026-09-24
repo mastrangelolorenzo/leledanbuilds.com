@@ -8,6 +8,11 @@ CREATE TABLE orders (
   provider TEXT NOT NULL CHECK (provider IN ('stripe', 'paypal')),
   provider_session_id TEXT NOT NULL,
   provider_reference TEXT,
+  -- Despite the declared type, this holds WHOLE EUROS (a frozen snapshot of
+  -- browse_items.price at checkout-init time), not cents -- and it may be
+  -- fractional (SQLite does not enforce column types). Stripe is charged in
+  -- cents via Math.round(amount * 100); PayPal is quoted a decimal string
+  -- built the same way. See paypalAmountMatchesOrder in server/lib/paypal.ts.
   amount INTEGER NOT NULL,
   currency TEXT NOT NULL DEFAULT 'EUR',
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed')),

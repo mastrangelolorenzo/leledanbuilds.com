@@ -139,7 +139,7 @@
                 accept=".zip,.rar,.7z,.schem,.schematic,.litematic,.mcworld,.pdf"
                 :disabled="uploadingDeliverable"
                 icon="i-lucide-file-up"
-                label="Click or drop a file to upload (zip, rar, 7z, schem, schematic, litematic, mcworld, pdf — max 100 MB)"
+                label="Click or drop a file to upload (zip, rar, 7z, schem, schematic, litematic, mcworld, pdf — max 25 MB)"
                 @update:model-value="onDeliverableFileSelected"
               />
               <p v-if="uploadingDeliverable" class="text-text/50 text-xs">Uploading…</p>

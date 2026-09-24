@@ -30,6 +30,10 @@ export default defineEventHandler(async (event) => {
   if (!secretKey) {
     throw createError({ statusCode: 503, statusMessage: 'Stripe is not configured.' })
   }
+  const bucket = event.context.cloudflare?.env?.UPLOADS
+  if (!bucket) {
+    throw createError({ statusCode: 503, statusMessage: 'Upload storage unavailable' })
+  }
 
   const item = await db
     .prepare('SELECT id, slug, title, price, download_key FROM browse_items WHERE id = ?')
@@ -40,6 +44,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Item not found.' })
   }
   if (!item.download_key) {
+    throw createError({ statusCode: 409, statusMessage: 'This item is not yet available for purchase.' })
+  }
+
+  // The DB row can point at an R2 object that was deleted (or never
+  // uploaded successfully) -- confirm it genuinely exists before ever
+  // taking the customer's money, not just that download_key is non-empty.
+  const deliverable = await bucket.head(item.download_key)
+  if (!deliverable) {
+    console.error(`[stripe-checkout] download_key "${item.download_key}" for item ${item.id} not found in R2, refusing checkout`)
     throw createError({ statusCode: 409, statusMessage: 'This item is not yet available for purchase.' })
   }
 
