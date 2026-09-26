@@ -186,6 +186,7 @@
 <script lang="ts" setup>
 import { computed, ref } from "vue";
 import { useRoute } from "#app";
+import { isValidHexColor } from "../../../server/utils/difficultyColors";
 
 interface BrowseItem {
   id: number
@@ -249,9 +250,25 @@ const build = computed(() =>
 // A single computed rather than a per-dot lookup: all "filled" dots for a
 // given item share the same colour, only the fill count (n <= level) below
 // differs per dot.
-const filledDotColor = computed(() =>
-  build.value ? difficultyColors.value?.[build.value.difficulty] ?? null : null
-);
+//
+// Re-validated with isValidHexColor here, not just trusted from the API:
+// GET /api/difficulty-colors returns whatever is in the database verbatim,
+// and this value is bound below via Vue's OBJECT :style form
+// ({ backgroundColor: filledDotColor }), which is only safe from CSS
+// injection because that form goes through the CSSOM setter -- a malformed
+// value is silently dropped there rather than interpolated into a style
+// *string*. That safety is incidental to how the binding happens to be
+// written today; if a future edit ever rewrites this as a template-string
+// style (e.g. `:style="\`background-color: ${filledDotColor}\`"`), an
+// unvalidated value would reopen exactly the injection this guards against.
+// Re-validating here, independent of the write-time check in
+// server/api/difficulty-colors/[level].put.ts, makes that protection
+// structural instead of incidental -- do NOT remove this as "redundant".
+const filledDotColor = computed(() => {
+  if (!build.value) return null;
+  const color = difficultyColors.value?.[build.value.difficulty];
+  return color && isValidHexColor(color) ? color : null;
+});
 
 const owned = computed(() =>
   !!build.value && myOrders.value.some((o) => o.browse_item_id === build.value!.id)

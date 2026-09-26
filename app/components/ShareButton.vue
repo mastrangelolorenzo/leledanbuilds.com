@@ -44,32 +44,38 @@ onBeforeUnmount(() => {
 async function handleShare() {
   if (pending.value) return
   errorMessage.value = ''
-  // Read at click-time (not derived/cached) so it's always the exact URL
-  // the visitor currently has open, correct in every environment (local
-  // dev, preview, production) with no server-side "canonical URL" config.
-  const url = window.location.href
+  // Covers the WHOLE operation -- the navigator.share attempt AND the
+  // clipboard fallback -- not just the share branch, so a rapid
+  // double-click can't fire a second handleShare() while the clipboard
+  // write from the first one is still in flight.
+  pending.value = true
+  try {
+    // Read at click-time (not derived/cached) so it's always the exact URL
+    // the visitor currently has open, correct in every environment (local
+    // dev, preview, production) with no server-side "canonical URL" config.
+    const url = window.location.href
 
-  if (typeof navigator.share === 'function') {
-    pending.value = true
-    try {
-      await navigator.share({ title: props.title, url })
-      pending.value = false
-      return
-    } catch (e: unknown) {
-      pending.value = false
-      // The user dismissing the OS share sheet is not an error -- navigator
-      // .share() rejects with AbortError in that case. Stop here silently;
-      // do NOT fall through to the clipboard path, since the visitor made
-      // an active choice not to share.
-      if ((e as { name?: string })?.name === 'AbortError') {
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: props.title, url })
         return
+      } catch (e: unknown) {
+        // The user dismissing the OS share sheet is not an error -- navigator
+        // .share() rejects with AbortError in that case. Stop here silently;
+        // do NOT fall through to the clipboard path, since the visitor made
+        // an active choice not to share.
+        if ((e as { name?: string })?.name === 'AbortError') {
+          return
+        }
+        // A genuine failure (permission denied, no share targets, etc.) falls
+        // through to the clipboard fallback below instead of dead-ending here.
       }
-      // A genuine failure (permission denied, no share targets, etc.) falls
-      // through to the clipboard fallback below instead of dead-ending here.
     }
-  }
 
-  await copyToClipboard(url)
+    await copyToClipboard(url)
+  } finally {
+    pending.value = false
+  }
 }
 
 async function copyToClipboard(url: string) {
