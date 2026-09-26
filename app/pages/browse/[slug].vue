@@ -30,25 +30,29 @@
         </NuxtLink>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <!-- md:order-2 puts the image on the right on desktop; unset on
+               mobile so the single-column layout still shows it first. -->
           <img
             :src="build.image_url"
             :alt="build.title"
-            class="w-full aspect-square object-cover rounded-2xl border border-white/10"
+            class="w-full aspect-square object-cover rounded-2xl border border-white/10 md:order-2"
             draggable="false"
           />
 
-          <div class="flex flex-col">
+          <div class="flex flex-col md:order-1">
             <div class="flex items-start justify-between gap-4 mb-4">
               <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
                 {{ build.title }}
               </h1>
-              <LikeButton
-                :browse-item-id="build.id"
-                :slug="build.slug"
-                :like-count="build.like_count"
-                :liked-by-me="build.liked_by_me ?? false"
-                class="shrink-0 mt-1"
-              />
+              <div class="flex items-center gap-2 shrink-0 mt-1">
+                <LikeButton
+                  :browse-item-id="build.id"
+                  :slug="build.slug"
+                  :like-count="build.like_count"
+                  :liked-by-me="build.liked_by_me ?? false"
+                />
+                <ShareButton :title="build.title" />
+              </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2 mb-5">
@@ -65,11 +69,17 @@
                 <dd class="flex items-center gap-2">
                   <span class="text-text font-semibold text-sm">{{ build.difficulty }}</span>
                   <span class="flex items-center gap-1">
+                    <!-- Filled dots use the admin-configured colour for this
+                         level (server/api/difficulty-colors) via inline
+                         style when available; falling back to the old
+                         bg-primary class (never an unstyled/blank dot) when
+                         the fetch failed or no colour is configured. -->
                     <span
                       v-for="n in 4"
                       :key="n"
                       class="w-2.5 h-2.5 rounded-sm"
-                      :class="n <= difficultyLevels[build.difficulty] ? 'bg-primary' : 'bg-white/15'"
+                      :class="n <= difficultyLevels[build.difficulty] ? (filledDotColor ? '' : 'bg-primary') : 'bg-white/15'"
+                      :style="n <= difficultyLevels[build.difficulty] && filledDotColor ? { backgroundColor: filledDotColor } : undefined"
                     ></span>
                   </span>
                 </dd>
@@ -198,6 +208,14 @@ const difficultyLevels: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3, 
 
 const { data: fetchedProducts } = await useFetch<BrowseItem[]>('/api/browse-items')
 
+// Difficulty dot colours are admin-configurable (server/database/migrations/
+// 0014_create_difficulty_colors.sql, server/api/difficulty-colors) and
+// fetched alongside the item data. A failed fetch just leaves this empty,
+// which the filledDotColor fallback below treats the same as "no configured
+// colour" -- the dots fall back to the old bg-primary appearance rather
+// than rendering unstyled or blank.
+const { data: difficultyColors } = await useFetch<Record<string, string>>('/api/difficulty-colors', { retry: false })
+
 // The global middleware (app/middleware/auth.global.ts) only populates
 // useAuthUser() for /app/* routes -- this is a public page, so a logged-in
 // visitor's session must be fetched here too, or the buy buttons below would
@@ -226,6 +244,13 @@ const route = useRoute();
 
 const build = computed(() =>
   products.value.find((p) => p.slug === route.params.slug)
+);
+
+// A single computed rather than a per-dot lookup: all "filled" dots for a
+// given item share the same colour, only the fill count (n <= level) below
+// differs per dot.
+const filledDotColor = computed(() =>
+  build.value ? difficultyColors.value?.[build.value.difficulty] ?? null : null
 );
 
 const owned = computed(() =>

@@ -11,6 +11,35 @@
       </UButton>
     </div>
 
+    <!-- Difficulty colours: configurable per level (server/database/migrations/
+         0014_create_difficulty_colors.sql). Level names stay fixed -- only
+         the colour is editable here. -->
+    <div class="bg-background-secondary border border-white/10 rounded-2xl p-5 mb-8">
+      <h2 class="text-sm font-bold uppercase tracking-wide text-text/70 mb-1">Difficulty colours</h2>
+      <p class="text-text/40 text-xs mb-4">Controls the dot colour shown for each difficulty level on the product page.</p>
+      <p v-if="difficultyColorsLoadError" class="text-red-400 text-sm mb-4">{{ difficultyColorsLoadError }}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div v-for="level in DIFFICULTIES" :key="level" class="flex flex-col gap-2">
+          <UFormField :label="level">
+            <div class="flex items-center gap-2">
+              <input
+                v-model="difficultyColorForm[level]"
+                type="color"
+                :aria-label="`${level} colour picker`"
+                class="w-9 h-9 rounded-lg border border-white/15 bg-transparent cursor-pointer shrink-0 p-0"
+              />
+              <UInput v-model="difficultyColorForm[level]" placeholder="#22c55e" class="flex-1" />
+            </div>
+          </UFormField>
+          <div class="flex items-center gap-2 min-h-[1.25rem]">
+            <UButton size="xs" :loading="savingColorLevel === level" @click="saveDifficultyColor(level)">Save</UButton>
+            <span v-if="colorSaveSuccess[level]" class="text-primary text-xs font-semibold">Saved</span>
+            <span v-if="colorSaveError[level]" class="text-red-400 text-xs">{{ colorSaveError[level] }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <p v-if="listError" class="text-red-400 text-sm mb-4">{{ listError }}</p>
 
     <div class="bg-background-secondary border border-white/10 rounded-2xl overflow-hidden overflow-x-auto">
@@ -182,6 +211,43 @@ const { data: items, refresh } = await useFetch<BrowseItem[]>('/api/browse-items
 const { data: buildTypeOptions } = await useFetch<string[]>('/api/admin/build-types')
 const { data: themeOptions } = await useFetch<string[]>('/api/admin/themes')
 const { data: categoryOptions } = await useFetch<string[]>('/api/admin/categories')
+
+const { data: difficultyColorsData, error: difficultyColorsError } = await useFetch<Record<string, string>>('/api/difficulty-colors')
+const difficultyColorsLoadError = computed(() => difficultyColorsError.value ? 'Could not load difficulty colours. Please refresh the page.' : '')
+
+const difficultyColorForm = reactive<Record<typeof DIFFICULTIES[number], string>>({
+  Easy: '',
+  Medium: '',
+  Hard: '',
+  Expert: '',
+})
+watch(difficultyColorsData, (data) => {
+  if (!data) return
+  for (const level of DIFFICULTIES) {
+    if (data[level]) difficultyColorForm[level] = data[level]
+  }
+}, { immediate: true })
+
+const savingColorLevel = ref<typeof DIFFICULTIES[number] | null>(null)
+const colorSaveError = reactive<Record<string, string>>({})
+const colorSaveSuccess = reactive<Record<string, boolean>>({})
+const colorSuccessTimers: Partial<Record<string, ReturnType<typeof setTimeout>>> = {}
+
+async function saveDifficultyColor(level: typeof DIFFICULTIES[number]) {
+  savingColorLevel.value = level
+  colorSaveError[level] = ''
+  colorSaveSuccess[level] = false
+  try {
+    await $fetch(`/api/difficulty-colors/${level}`, { method: 'PUT', body: { color: difficultyColorForm[level] } })
+    colorSaveSuccess[level] = true
+    if (colorSuccessTimers[level]) clearTimeout(colorSuccessTimers[level])
+    colorSuccessTimers[level] = setTimeout(() => { colorSaveSuccess[level] = false }, 2000)
+  } catch (e: unknown) {
+    colorSaveError[level] = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Save failed.'
+  } finally {
+    savingColorLevel.value = null
+  }
+}
 
 function onCreateTaxonomyTerm(name: string, options: Ref<string[] | null>) {
   // Optimistically add it locally so it's immediately selectable and shows
