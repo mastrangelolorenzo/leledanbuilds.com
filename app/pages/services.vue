@@ -60,6 +60,9 @@
           <div class="border-t border-white/10 mt-2"></div>
         </div>
       </div>
+
+      <!-- FAQ -->
+      <FaqAccordion />
     </div>
   </div>
 </template>
