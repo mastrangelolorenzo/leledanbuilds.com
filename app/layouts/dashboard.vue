@@ -8,6 +8,7 @@
       </NuxtLink>
       <div class="flex items-center gap-4">
         <NuxtLink
+          v-if="user?.role === 'admin'"
           to="/app"
           class="text-xs font-bold uppercase tracking-wide"
           :class="isActive('/app') ? 'text-primary' : 'text-text/60'"
@@ -76,6 +77,7 @@
 
       <nav class="flex flex-col gap-1">
         <NuxtLink
+          v-if="user?.role === 'admin'"
           to="/app"
           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
           :class="isActive('/app') ? 'bg-primary/10 text-primary' : 'text-text/70 hover:bg-white/5 hover:text-text'"

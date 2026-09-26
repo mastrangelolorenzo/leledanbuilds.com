@@ -18,4 +18,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (isAdminRoute && me.value.role !== 'admin') {
     return navigateTo('/app')
   }
+
+  // The dashboard home (/app) only has real content for admins (posts
+  // stats). A non-admin landing there sees a dead "nothing here yet" page,
+  // so send them straight to the one page that's actually theirs. This
+  // can't loop: /app/purchases is neither `/app` itself nor in
+  // isAdminRoute, so it passes straight through on the next navigation.
+  if (to.path === '/app' && me.value.role !== 'admin') {
+    return navigateTo('/app/purchases')
+  }
 })
