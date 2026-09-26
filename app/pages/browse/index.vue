@@ -90,6 +90,16 @@
                   class="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500"
                   draggable="false"
                 />
+                <!-- Positioned outside the "View Build" NuxtLink below (and
+                     @click.stop inside LikeButton itself) so liking never
+                     also navigates to the product page. -->
+                <LikeButton
+                  :browse-item-id="item.id"
+                  :slug="item.slug"
+                  :like-count="item.like_count"
+                  :liked-by-me="item.liked_by_me ?? false"
+                  class="absolute top-3 right-3 z-10"
+                />
                 <div class="p-5 flex flex-col flex-1">
                   <h3 class="text-white font-extrabold uppercase text-lg tracking-wide mb-3">{{ item.title }}</h3>
 
@@ -181,6 +191,8 @@ interface BrowseItem {
   category: string
   released: string
   description: string
+  like_count: number
+  liked_by_me?: boolean
 }
 
 const difficultyLevels: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3, Expert: 4 }
@@ -189,6 +201,17 @@ const route = useRoute();
 
 const { data: fetchedProducts } = await useFetch<BrowseItem[]>('/api/browse-items')
 const products = computed(() => fetchedProducts.value ?? [])
+
+// The global middleware (app/middleware/auth.global.ts) only populates
+// useAuthUser() for /app/* routes -- this is a public page, so a logged-in
+// visitor's session must be fetched here too, or LikeButton below would
+// never know they're logged in and would send them to log in even though
+// they already are. Same pattern as app/pages/browse/[slug].vue.
+const user = useAuthUser()
+if (!user.value) {
+  const { data: me } = await useFetch<{ userId: number, role: 'admin' | 'user' } | null>('/api/auth/me', { retry: false })
+  user.value = me.value ?? null
+}
 
 const buildTypes = [...new Set(products.value.map((p) => p.build_type))];
 const themes = [...new Set(products.value.map((p) => p.theme))];

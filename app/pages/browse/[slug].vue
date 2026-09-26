@@ -38,9 +38,18 @@
           />
 
           <div class="flex flex-col">
-            <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white mb-4">
-              {{ build.title }}
-            </h1>
+            <div class="flex items-start justify-between gap-4 mb-4">
+              <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
+                {{ build.title }}
+              </h1>
+              <LikeButton
+                :browse-item-id="build.id"
+                :slug="build.slug"
+                :like-count="build.like_count"
+                :liked-by-me="build.liked_by_me ?? false"
+                class="shrink-0 mt-1"
+              />
+            </div>
 
             <div class="flex flex-wrap items-center gap-2 mb-5">
               <span class="px-3 py-1 rounded-full border border-primary/40 text-primary text-xs font-semibold uppercase tracking-wide">{{ build.build_type }}</span>
@@ -181,6 +190,8 @@ interface BrowseItem {
   released: string
   description: string
   has_download: boolean
+  like_count: number
+  liked_by_me?: boolean
 }
 
 const difficultyLevels: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3, Expert: 4 }
