@@ -10,7 +10,7 @@ export default defineNuxtConfig({
   modules: ['@nuxt/ui', '@nuxt/image', 'nitro-cloudflare-dev'],
   css: ['~/assets/css/main.css'],
   nitro: {
-    preset: 'cloudflare_pages',
+    preset: 'cloudflare-module',
   },
   vite: {
     plugins: [
@@ -27,7 +27,7 @@ export default defineNuxtConfig({
     //
     // Fix: alias `cloudflare:sockets` to a local throwing stub, but ONLY when
     // `nitroConfig.dev` is true (i.e. only for `npm run dev`). The production
-    // build (`cloudflare_pages` preset, `npm run build`) must NOT get this
+    // build (`cloudflare-module` preset, `npm run build`) must NOT get this
     // alias — it genuinely has `cloudflare:sockets` available via workerd.
     'nitro:config': (nitroConfig) => {
       if (nitroConfig.dev) {

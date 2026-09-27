@@ -1,6 +1,11 @@
 name = "leledan-ws"
 compatibility_date = "2025-07-15"
-pages_build_output_dir = "dist"
+compatibility_flags = ["nodejs_compat"]
+main = ".output/server/index.mjs"
+
+[assets]
+directory = ".output/public"
+binding = "ASSETS"
 
 [[d1_databases]]
 binding = "DB"

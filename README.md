@@ -266,7 +266,7 @@ them back through this same Worker at `/uploads/:key`
 (`server/routes/uploads/[key].get.ts`) — no second domain or R2 public
 bucket setup needed. Like the SMTP feature, R2 is only genuinely available
 under the real Workers runtime, so testing uploads locally needs
-`npm run build && npx wrangler pages dev dist`, not plain `npm run dev`.
+`npm run build && npx wrangler dev`, not plain `npm run dev`.
 
 ### Managed taxonomies (browse items)
 
@@ -350,8 +350,8 @@ provider afterward.
 
 `npx wrangler d1 migrations apply leledan-builds --remote` before the first
 deploy that includes the `users` table. Set `SESSION_SECRET` as a
-Cloudflare Pages secret (not in any committed file):
-`npx wrangler pages secret put SESSION_SECRET`.
+Cloudflare Workers secret (not in any committed file):
+`npx wrangler secret put SESSION_SECRET`.
 
 ### Email verification
 
@@ -378,7 +378,7 @@ only exists in the real Cloudflare Workers runtime (`workerd`), not in
 there). To test registration/verification/resend locally end to end, build
 and run the real Workers runtime instead:
 ```bash
-npm run build && npx wrangler pages dev dist
+npm run build && npx wrangler dev
 ```
 
 ## 📄 License
