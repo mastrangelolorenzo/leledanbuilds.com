@@ -1,5 +1,11 @@
 <template>
   <section class="relative py-14 px-4 overflow-x-auto">
+    <!-- Decorative gold glow behind the card. Hidden from assistive tech and
+         non-interactive. blur() doesn't affect layout, so it can't widen this
+         horizontally-scrollable section. -->
+    <div class="pointer-events-none absolute inset-0 flex items-center justify-center" aria-hidden="true">
+      <div class="h-32 md:h-44 w-[min(52rem,88%)] rounded-full bg-primary/20 blur-3xl"></div>
+    </div>
     <div ref="statsRef" class="relative max-w-4xl mx-auto rounded-3xl bg-background-secondary/50 shadow-xl px-4 md:px-12 py-6 md:py-10 w-fit min-w-full sm:min-w-0">
       <div class="flex flex-nowrap justify-center items-center">
         <template v-for="(stat, index) in stats" :key="stat.label">
