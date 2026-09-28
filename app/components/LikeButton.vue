@@ -2,10 +2,13 @@
   <div class="inline-flex flex-col items-start">
     <button
       type="button"
-      class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-      :class="liked
-        ? 'bg-red-500/15 border-red-500/50 text-red-500'
-        : 'bg-black/30 border-white/15 text-text/70 hover:border-primary/40 hover:text-primary'"
+      class="inline-flex items-center rounded-full border font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+      :class="[
+        size === 'lg' ? 'gap-2 px-5 py-2.5 text-sm' : 'gap-1.5 px-2.5 py-1.5 text-xs',
+        liked
+          ? 'bg-red-500/15 border-red-500/50 text-red-500'
+          : 'bg-black/30 border-white/15 text-text/70 hover:border-primary/40 hover:text-primary',
+      ]"
       :disabled="pending"
       :aria-pressed="liked"
       :aria-label="liked ? 'Unlike this build' : 'Like this build'"
@@ -20,8 +23,7 @@
         <UIcon
           name="i-lucide-heart"
           mode="svg"
-          class="text-sm"
-          :class="liked ? '[&_path]:fill-current' : ''"
+          :class="[size === 'lg' ? 'text-base' : 'text-sm', liked ? '[&_path]:fill-current' : '']"
         />
       </span>
       <span>{{ count }}</span>
@@ -39,12 +41,18 @@ import { optimisticLikeToggle } from '../utils/likeToggle'
 // watcher below, a client-side remount — paginating the catalog away and back
 // — would redisplay the state from the initial page load and silently discard
 // a toggle the visitor just made.
-const props = defineProps<{
-  browseItemId: number
-  slug: string
-  likeCount: number
-  likedByMe: boolean
-}>()
+const props = withDefaults(
+  defineProps<{
+    browseItemId: number
+    slug: string
+    likeCount: number
+    likedByMe: boolean
+    // 'sm' keeps the compact form used in the catalog grid; 'lg' is the
+    // product page, where this reads as a real button next to the price.
+    size?: 'sm' | 'lg'
+  }>(),
+  { size: 'sm' }
+)
 
 // Same pattern both browse pages use to know about a logged-in visitor:
 // the global auth middleware (app/middleware/auth.global.ts) only populates

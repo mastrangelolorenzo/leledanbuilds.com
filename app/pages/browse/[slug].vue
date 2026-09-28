@@ -40,20 +40,9 @@
           />
 
           <div class="flex flex-col md:order-1">
-            <div class="flex items-start justify-between gap-4 mb-4">
-              <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
-                {{ build.title }}
-              </h1>
-              <div class="flex items-center gap-2 shrink-0 mt-1">
-                <LikeButton
-                  :browse-item-id="build.id"
-                  :slug="build.slug"
-                  :like-count="build.like_count"
-                  :liked-by-me="build.liked_by_me ?? false"
-                />
-                <ShareButton :title="build.title" />
-              </div>
-            </div>
+            <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white mb-4">
+              {{ build.title }}
+            </h1>
 
             <div class="flex flex-wrap items-center gap-2 mb-5">
               <span class="px-3 py-1 rounded-full border border-primary/40 text-primary text-xs font-semibold uppercase tracking-wide">{{ build.build_type }}</span>
@@ -100,7 +89,19 @@
               </div>
             </dl>
 
-            <div class="flex items-center justify-between mt-auto pt-6 border-t border-white/10">
+            <div class="mt-auto">
+              <div class="flex items-center gap-2 mb-5">
+                <LikeButton
+                  :browse-item-id="build.id"
+                  :slug="build.slug"
+                  :like-count="build.like_count"
+                  :liked-by-me="build.liked_by_me ?? false"
+                  size="lg"
+                />
+                <ShareButton :title="build.title" size="lg" />
+              </div>
+
+            <div class="flex items-center justify-between pt-6 border-t border-white/10">
               <span class="text-primary font-black text-4xl">€{{ build.price }}</span>
               <NuxtLink
                 v-if="!user"
@@ -144,6 +145,7 @@
                 </div>
                 <p v-if="checkoutError" class="text-red-400 text-xs">{{ checkoutError }}</p>
               </div>
+            </div>
             </div>
           </div>
         </div>

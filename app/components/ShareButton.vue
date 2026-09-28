@@ -2,10 +2,13 @@
   <div class="inline-flex flex-col items-start">
     <button
       type="button"
-      class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-      :class="justCopied
-        ? 'bg-primary/15 border-primary/40 text-primary'
-        : 'bg-black/30 border-white/15 text-text/70 hover:border-primary/40 hover:text-primary'"
+      class="inline-flex items-center rounded-full border font-bold uppercase tracking-wide transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+      :class="[
+        size === 'lg' ? 'gap-2 px-5 py-2.5 text-sm' : 'gap-1.5 px-2.5 py-1.5 text-xs',
+        justCopied
+          ? 'bg-primary/15 border-primary/40 text-primary'
+          : 'bg-black/30 border-white/15 text-text/70 hover:border-primary/40 hover:text-primary',
+      ]"
       :disabled="pending"
       aria-label="Share this build"
       @click.stop="handleShare"
@@ -13,7 +16,7 @@
       <UIcon
         :name="justCopied ? 'i-lucide-check' : 'i-lucide-share-2'"
         mode="svg"
-        class="text-sm"
+        :class="size === 'lg' ? 'text-base' : 'text-sm'"
       />
       <span>{{ justCopied ? 'Link copied' : 'Share' }}</span>
     </button>
@@ -28,9 +31,15 @@ import { onBeforeUnmount, ref } from 'vue'
 // specific browse item beyond a human-readable title -- the URL it shares
 // is always just the current page (window.location.href), which is what
 // makes this safe to use for anonymous visitors with zero server round-trip.
-const props = defineProps<{
-  title: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    title: string
+    // 'sm' keeps the compact form used in the catalog grid; 'lg' is the
+    // product page, where this reads as a real button next to the price.
+    size?: 'sm' | 'lg'
+  }>(),
+  { size: 'sm' }
+)
 
 const pending = ref(false)
 const justCopied = ref(false)
