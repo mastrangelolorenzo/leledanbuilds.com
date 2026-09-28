@@ -74,6 +74,20 @@
       </div>
 
       <div class="border-t border-primary/20 pt-5 flex flex-col items-center gap-1">
+        <div class="flex flex-col items-center gap-2 mb-3">
+          <span class="text-text/50 text-[11px] uppercase tracking-[0.2em] font-bold">We accept</span>
+          <ul class="flex flex-wrap items-center justify-center gap-4">
+            <li v-for="method in paymentMethods" :key="method.name" class="flex items-center">
+              <UIcon
+                :name="method.icon"
+                class="text-2xl text-text/45 hover:text-text/80 transition-colors"
+                :aria-label="method.name"
+                role="img"
+              />
+            </li>
+          </ul>
+        </div>
+
         <p class="text-text/80 text-sm">Copyright © {{ new Date().getFullYear() }} leledan06 - All rights reserved.</p>
         <p class="text-text/60 italic text-sm">Shaping new realities, one block at a time.</p>
       </div>
@@ -82,6 +96,17 @@
 </template>
 
 <script lang="ts" setup>
+  // Card brands are handled by Stripe Checkout; Klarna is enabled on the
+  // account too. PayPal is listed because the integration ships with the
+  // site — it only goes live once its credentials are configured.
+  const paymentMethods = [
+    { name: 'Visa', icon: 'i-simple-icons-visa' },
+    { name: 'Mastercard', icon: 'i-simple-icons-mastercard' },
+    { name: 'American Express', icon: 'i-simple-icons-americanexpress' },
+    { name: 'PayPal', icon: 'i-simple-icons-paypal' },
+    { name: 'Klarna', icon: 'i-simple-icons-klarna' },
+  ]
+
   const socialLinks = [
     {
       icon: "i-simple-icons-discord",
