@@ -89,7 +89,7 @@ const bgImages = [
   "/background/1.webp",
   "/background/2.webp",
   "/background/3.webp",
-  // "/background/4.webp",
+  "/background/4.webp",
   // "/background/5.webp",
 ];
 
