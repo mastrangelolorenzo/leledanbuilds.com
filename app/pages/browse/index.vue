@@ -111,11 +111,16 @@
                   <div class="flex items-center gap-2 mb-4">
                     <span class="text-text/50 text-xs uppercase tracking-wide font-semibold">{{ item.difficulty }}</span>
                     <span class="flex items-center gap-1">
+                      <!-- Same admin-configured colours as the detail page
+                           (app/pages/browse/[slug].vue): inline style when a
+                           valid colour exists for this level, otherwise the
+                           old bg-primary class -- never a blank dot. -->
                       <span
                         v-for="n in 4"
                         :key="n"
                         class="w-2.5 h-2.5 rounded-sm"
-                        :class="n <= difficultyLevels[item.difficulty] ? 'bg-primary' : 'bg-white/15'"
+                        :class="n <= difficultyLevels[item.difficulty] ? (filledDotColor(item.difficulty) ? '' : 'bg-primary') : 'bg-white/15'"
+                        :style="n <= difficultyLevels[item.difficulty] && filledDotColor(item.difficulty) ? { backgroundColor: filledDotColor(item.difficulty) } : undefined"
                       ></span>
                     </span>
                   </div>
@@ -178,6 +183,7 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from "vue";
 import { useRoute } from "#app";
+import { isValidHexColor } from "../../../server/utils/difficultyColors";
 
 interface BrowseItem {
   id: number
@@ -201,6 +207,25 @@ const route = useRoute();
 
 const { data: fetchedProducts } = await useFetch<BrowseItem[]>('/api/browse-items')
 const products = computed(() => fetchedProducts.value ?? [])
+
+// Admin-configurable difficulty dot colours, same source as the detail page
+// (server/api/difficulty-colors). A failed fetch leaves this empty, which
+// filledDotColor() below treats as "no configured colour" -- the dots fall
+// back to bg-primary rather than rendering blank.
+const { data: difficultyColors } = await useFetch<Record<string, string>>('/api/difficulty-colors', { retry: false })
+
+// A function rather than a computed because this grid renders many items at
+// once, each with its own difficulty. Re-validated with isValidHexColor for
+// the same reason as app/pages/browse/[slug].vue: the API returns whatever
+// is in the database verbatim, and the object :style form below is only safe
+// from CSS injection because it goes through the CSSOM setter. Validating
+// here makes that protection structural rather than incidental -- do NOT
+// remove this as "redundant" with the write-time check in
+// server/api/difficulty-colors/[level].put.ts.
+function filledDotColor(difficulty: string): string | null {
+  const color = difficultyColors.value?.[difficulty]
+  return color && isValidHexColor(color) ? color : null
+}
 
 // The global middleware (app/middleware/auth.global.ts) only populates
 // useAuthUser() for /app/* routes -- this is a public page, so a logged-in
