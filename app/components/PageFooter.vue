@@ -76,14 +76,14 @@
       <div class="border-t border-primary/20 pt-5 flex flex-col items-center gap-1">
         <div class="flex flex-col items-center gap-2 mb-3">
           <span class="text-text/50 text-[11px] uppercase tracking-[0.2em] font-bold">We accept</span>
-          <ul class="flex flex-wrap items-center justify-center gap-4">
+          <ul class="flex flex-wrap items-center justify-center gap-2.5">
             <li v-for="method in paymentMethods" :key="method.name" class="flex items-center">
-              <UIcon
-                :name="method.icon"
-                class="text-2xl text-text/45 hover:text-text/80 transition-colors"
-                :aria-label="method.name"
-                role="img"
-              />
+              <span
+                class="flex items-center justify-center h-8 w-12 rounded-md shadow-sm transition-transform duration-200 hover:scale-105"
+                :class="[method.chip, method.color]"
+              >
+                <UIcon :name="method.icon" class="text-2xl" :aria-label="method.name" role="img" />
+              </span>
             </li>
           </ul>
         </div>
@@ -99,12 +99,26 @@
   // Card brands are handled by Stripe Checkout; Klarna is enabled on the
   // account too. PayPal is listed because the integration ships with the
   // site — it only goes live once its credentials are configured.
+  //
+  // Each mark gets its official brand colour, on a chip rather than directly
+  // on the footer: Visa (#1A1F71) and PayPal (#003087) are near-black navy,
+  // so on this dark background they would be all but invisible. A light chip
+  // is also how these badges appear in the wild, so it reads as intended
+  // rather than as a workaround.
+  //
+  // Klarna is the exception that proves the rule — its badge is black on its
+  // own pink (#FFB3C7), and pink-on-white would be illegible — hence the
+  // per-method chip colour instead of one shared white.
+  //
+  // Colours are Tailwind arbitrary values rather than inline styles so they
+  // go through the normal class pipeline; they are source literals, never
+  // user input.
   const paymentMethods = [
-    { name: 'Visa', icon: 'i-simple-icons-visa' },
-    { name: 'Mastercard', icon: 'i-simple-icons-mastercard' },
-    { name: 'American Express', icon: 'i-simple-icons-americanexpress' },
-    { name: 'PayPal', icon: 'i-simple-icons-paypal' },
-    { name: 'Klarna', icon: 'i-simple-icons-klarna' },
+    { name: 'Visa', icon: 'i-simple-icons-visa', chip: 'bg-white', color: 'text-[#1A1F71]' },
+    { name: 'Mastercard', icon: 'i-simple-icons-mastercard', chip: 'bg-white', color: 'text-[#EB001B]' },
+    { name: 'American Express', icon: 'i-simple-icons-americanexpress', chip: 'bg-white', color: 'text-[#2E77BC]' },
+    { name: 'PayPal', icon: 'i-simple-icons-paypal', chip: 'bg-white', color: 'text-[#003087]' },
+    { name: 'Klarna', icon: 'i-simple-icons-klarna', chip: 'bg-[#FFB3C7]', color: 'text-black' },
   ]
 
   const socialLinks = [
