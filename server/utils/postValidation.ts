@@ -1,4 +1,5 @@
 import { createError } from 'h3'
+import { isValidDeliverableKey } from './deliverableKey'
 
 export function slugify(title: string): string {
   return title
@@ -63,20 +64,19 @@ export function isValidPrice(price: unknown): boolean {
     && Math.round(price * 100) / 100 === price
 }
 
-// Matches exactly what server/api/admin/upload-file.post.ts generates:
-// `deliverables/${crypto.randomUUID()}.${extension}`, where extension is
-// one of ALLOWED_DELIVERABLE_EXTENSIONS (server/utils/fileUpload.ts),
-// lowercased, max 10 chars ("schematic"/"litematic" are the longest at 9).
-const DOWNLOAD_KEY_PATTERN = /^deliverables\/[0-9a-f-]{36}\.[a-z0-9]{1,10}$/
-
 /**
  * Format-validates a download_key at write time: it's stored as free text
- * with no format check today, so a typo'd key is indistinguishable from a
- * real one until a paying customer's download 404s. This can't confirm the
- * R2 object actually exists (that's checked at checkout time instead, see
- * the `bucket.head()` calls in server/api/checkout/*.post.ts) -- it only
- * rejects values that could never have come from the upload endpoint.
+ * with no format check in the schema, so a typo'd key is indistinguishable
+ * from a real one until a paying customer's download 404s. This can't
+ * confirm the R2 object actually exists (that's checked at checkout time
+ * instead, see the `bucket.head()` calls in server/api/checkout/*.post.ts)
+ * -- it only rejects values that could never have come from the upload flow.
+ *
+ * Delegates to isValidDeliverableKey rather than carrying its own regex:
+ * there used to be two patterns for this one string, and the looser one here
+ * accepted keys the upload flow can never produce. One definition, in the
+ * module that also GENERATES the key, cannot drift from itself.
  */
 export function isValidDownloadKey(key: unknown): boolean {
-  return typeof key === 'string' && DOWNLOAD_KEY_PATTERN.test(key)
+  return isValidDeliverableKey(key)
 }

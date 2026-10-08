@@ -27,7 +27,7 @@ export function sanitizeFilename(name: string): string {
 }
 
 // download_key is written only by our own upload code
-// (server/api/admin/upload-file.post.ts), which always appends one of a
+// (server/utils/deliverableKey.ts), which always appends one of a
 // fixed set of lowercase alphanumeric extensions -- but the admin
 // browse-items create/update endpoints accept download_key as a raw string
 // with no format check, so this still parses the suffix defensively rather

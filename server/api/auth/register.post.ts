@@ -3,6 +3,8 @@ import { isUniqueConstraintError } from '../../utils/postValidation'
 import { generateVerificationToken } from '../../utils/verificationToken'
 import { sendMail, isValidEmailForHeader } from '../../lib/smtp'
 import { getPublicOrigin } from '../../utils/env'
+import { enforceRateLimitByIp } from '../../utils/enforceRateLimit'
+import { RATE_LIMITS } from '../../utils/rateLimit'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ email?: string, password?: string }>(event)
@@ -12,6 +14,12 @@ export default defineEventHandler(async (event) => {
   if (!email || !isValidEmailForHeader(email) || !password || password.length < 8) {
     throw createError({ statusCode: 400, statusMessage: 'Valid email and a password of 8+ characters are required.' })
   }
+
+  // Per IP only: keying this by email would let an attacker register the
+  // same address repeatedly from many hosts, and more importantly every
+  // registration sends a verification email, so the thing worth limiting is
+  // "how much mail can one host make us send".
+  await enforceRateLimitByIp(event, RATE_LIMITS.register)
 
   const db = event.context.cloudflare?.env?.DB
   if (!db) {

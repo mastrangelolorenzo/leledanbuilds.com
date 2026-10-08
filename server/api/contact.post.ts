@@ -1,4 +1,6 @@
 import { sendMail, isValidEmailForHeader } from '../lib/smtp'
+import { enforceRateLimitByIp } from '../utils/enforceRateLimit'
+import { RATE_LIMITS } from '../utils/rateLimit'
 
 export const INQUIRY_TYPES = ['General Question', 'Custom Build Request', 'Order Support', 'Business Inquiry', 'Other'] as const
 
@@ -28,6 +30,12 @@ export default defineEventHandler(async (event) => {
   if (message.length > MAX_MESSAGE_LENGTH) {
     throw createError({ statusCode: 400, statusMessage: `Message must be ${MAX_MESSAGE_LENGTH} characters or fewer.` })
   }
+
+  // Every accepted submission sends mail to the owner's inbox, so without
+  // this the form is an open mail relay pointed at leledanbusiness@gmail.com.
+  // Placed after validation so a malformed flood is rejected before it can
+  // consume the caller's own quota.
+  await enforceRateLimitByIp(event, RATE_LIMITS.contact)
 
   const env = event.context.cloudflare?.env
   if (!env) {

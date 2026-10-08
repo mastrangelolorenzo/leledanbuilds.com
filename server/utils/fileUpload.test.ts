@@ -43,7 +43,7 @@ describe('isValidDeliverableFile', () => {
     expect(isValidDeliverableFile(bytes, 'pdf')).toBe(true)
   })
 
-  // I2: server/api/admin/upload-file.post.ts used to copy filePart.data
+  // I2: the old single-request upload endpoint used to copy filePart.data
   // (a Buffer) into `new Uint8Array(filePart.data)` before calling this
   // function -- a redundant copy removed because Buffer already IS a
   // Uint8Array. This proves that removal is behavior-preserving: a real

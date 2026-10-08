@@ -1,6 +1,8 @@
 import { requireAuth } from '../../utils/requireAuth'
-import { createStripeCheckoutSession } from '../../lib/stripe'
+import { createStripeCheckoutSession, retrieveStripeCheckoutSession } from '../../lib/stripe'
 import { getPublicOrigin } from '../../utils/env'
+import { enforceRateLimit } from '../../utils/enforceRateLimit'
+import { RATE_LIMITS } from '../../utils/rateLimit'
 
 interface Body {
   browse_item_id: number
@@ -89,6 +91,58 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'You already own this build — you can download it from My Purchases.',
     })
   }
+
+  // Reuse a still-open Checkout Session instead of creating a second one.
+  //
+  // This is what actually closes the double-purchase hole. The 'completed'
+  // check above cannot: it is satisfied for as long as the first order sits
+  // at 'pending', so a second click (another tab, an impatient retry, a
+  // double-submit) used to mint a SECOND session and a SECOND order, and
+  // paying both produced two completed orders for one item. That is not a
+  // millisecond race -- the window lasts as long as the buyer takes to pay.
+  // This database has three completed orders for one (user, item) pair from
+  // exactly that path.
+  //
+  // Reuse, rather than refusing the second attempt: refusing would strand a
+  // buyer who abandoned Stripe and came back, and Checkout Sessions stay
+  // open for 24h, so handing back the same session is both safe and the
+  // better experience. Paying the same session twice is impossible -- Stripe
+  // itself closes it on completion.
+  const openOrder = await db
+    .prepare(
+      `SELECT id, provider_session_id FROM orders
+       WHERE user_id = ? AND browse_item_id = ? AND provider = 'stripe' AND status = 'pending'
+       ORDER BY id DESC LIMIT 1`
+    )
+    .bind(session.userId, item.id)
+    .first<{ id: number, provider_session_id: string }>()
+
+  if (openOrder) {
+    // A provider_session_id still carrying the 'pending-' placeholder means
+    // the previous attempt died between the INSERT and the Stripe call, so
+    // there is no session to reuse -- fall through and make a new one.
+    const isRealSession = !openOrder.provider_session_id.startsWith('pending-')
+    if (isRealSession) {
+      const existingSession = await retrieveStripeCheckoutSession(secretKey, openOrder.provider_session_id)
+      // Only 'open' is reusable: 'complete' means the webhook simply has not
+      // landed yet, and 'expired' means Stripe will never accept it again.
+      if (existingSession?.status === 'open' && existingSession.url) {
+        return { url: existingSession.url }
+      }
+      if (existingSession?.status === 'expired') {
+        // Retire it so this lookup does not keep finding the same dead row
+        // on every future attempt.
+        await db
+          .prepare(`UPDATE orders SET status = 'failed', updated_at = ? WHERE id = ? AND status = 'pending'`)
+          .bind(new Date().toISOString(), openOrder.id)
+          .run()
+      }
+    }
+  }
+
+  // Only now, past every cheap rejection and the reuse path, does an attempt
+  // cost us an outbound Stripe call -- so this is where it is worth counting.
+  await enforceRateLimit(event, RATE_LIMITS.checkout, String(session.userId))
 
   const origin = getPublicOrigin(event)
   const now = new Date().toISOString()

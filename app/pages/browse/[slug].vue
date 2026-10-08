@@ -136,10 +136,22 @@
               </span>
               <div v-else class="flex flex-col items-end gap-2">
                 <div class="flex items-center gap-3">
-                  <UButton :loading="checkoutLoading === 'stripe'" :disabled="!!checkoutLoading" @click="startCheckout('stripe')">
+                  <UButton
+                    class="rounded-full px-6 py-3 font-bold uppercase text-sm"
+                    :loading="checkoutLoading === 'stripe'"
+                    :disabled="!!checkoutLoading"
+                    @click="startCheckout('stripe')"
+                  >
                     Buy with card
                   </UButton>
-                  <UButton :loading="checkoutLoading === 'paypal'" :disabled="!!checkoutLoading" color="neutral" variant="outline" @click="startCheckout('paypal')">
+                  <UButton
+                    class="rounded-full px-6 py-3 font-bold uppercase text-sm"
+                    :loading="checkoutLoading === 'paypal'"
+                    :disabled="!!checkoutLoading"
+                    color="neutral"
+                    variant="outline"
+                    @click="startCheckout('paypal')"
+                  >
                     Buy with PayPal
                   </UButton>
                 </div>

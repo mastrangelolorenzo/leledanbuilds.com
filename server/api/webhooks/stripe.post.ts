@@ -1,4 +1,5 @@
 import { verifyStripeSignature } from '../../lib/stripe'
+import { stripeChargeMatchesOrder } from '../../utils/orderVerification'
 
 interface StripeEvent {
   type: string
@@ -10,6 +11,10 @@ interface StripeEvent {
       amount_total?: number
       currency?: string
       metadata?: { order_id?: string }
+      // Present on Dispute objects (charge.dispute.*), not on Sessions.
+      status?: string
+      // Present on Charge objects (charge.refunded).
+      amount_refunded?: number
     }
   }
 }
@@ -20,7 +25,26 @@ interface OrderRow {
   amount: number
   currency: string
   status: string
+  user_id: number
+  browse_item_id: number
 }
+
+// Refund and dispute events carry a Charge or a Dispute, NOT the Checkout
+// Session -- so they have no metadata.order_id and must be correlated the
+// other way round, through the payment_intent stored on the order as
+// provider_reference when it completed.
+//
+// Neither handler revokes the download. That is the site's stated policy
+// (see app/pages/refunds.vue): the file cannot be un-delivered once it is
+// on the buyer's disk, so pretending otherwise would be theatre. What these
+// do is make the money movement VISIBLE on the order, which is what the
+// admin orders view reads -- previously a refund or a chargeback left no
+// trace anywhere in the system.
+const REFUND_AND_DISPUTE_EVENTS = [
+  'charge.refunded',
+  'charge.dispute.created',
+  'charge.dispute.closed',
+]
 
 export default defineEventHandler(async (event) => {
   const webhookSecret = event.context.cloudflare?.env?.STRIPE_WEBHOOK_SECRET
@@ -67,6 +91,56 @@ export default defineEventHandler(async (event) => {
     'checkout.session.async_payment_succeeded',
     'checkout.session.async_payment_failed',
   ]
+
+  if (REFUND_AND_DISPUTE_EVENTS.includes(type) && session) {
+    const db = event.context.cloudflare?.env?.DB
+    if (!db) {
+      console.error(`[stripe-webhook] DB binding unavailable handling ${type}`)
+      // Transient: Stripe should retry once the binding is back.
+      throw createError({ statusCode: 503, statusMessage: 'Database unavailable' })
+    }
+
+    // On a Charge the payment_intent field holds the intent id; on a Dispute
+    // it does too. Fall back to the object's own id so a provider_reference
+    // that was stored as a session id (the fallback in the completion path
+    // below) can still be matched.
+    const reference = session.payment_intent ?? session.id
+    const order = await db
+      .prepare('SELECT id FROM orders WHERE provider_reference = ? AND provider = ? LIMIT 1')
+      .bind(reference, 'stripe')
+      .first<{ id: number }>()
+
+    if (!order) {
+      // Not ours, or a charge from before this integration. Nothing to
+      // record, and no retry will change that.
+      console.error(`[stripe-webhook] ${type}: no order matches provider_reference ${reference}`)
+      return { received: true }
+    }
+
+    const nowIso = new Date().toISOString()
+    if (type === 'charge.refunded') {
+      await db
+        .prepare('UPDATE orders SET refunded_at = ?, needs_refund = 0, updated_at = ? WHERE id = ?')
+        .bind(nowIso, nowIso, order.id)
+        .run()
+      // needs_refund is cleared because the refund has now actually
+      // happened -- that flag means "money is owed back", and it no longer is.
+      console.error(`[stripe-webhook] order ${order.id} refunded (reference ${reference})`)
+    } else {
+      // Dispute status verbatim from Stripe (needs_response, under_review,
+      // won, lost, warning_*). Stored as text rather than mapped to our own
+      // vocabulary so a new Stripe status cannot silently become "unknown".
+      const disputeStatus = typeof session.status === 'string' ? session.status : type
+      await db
+        .prepare('UPDATE orders SET dispute_status = ?, updated_at = ? WHERE id = ?')
+        .bind(disputeStatus, nowIso, order.id)
+        .run()
+      console.error(`[stripe-webhook] order ${order.id} dispute ${disputeStatus} (reference ${reference})`)
+    }
+
+    return { received: true }
+  }
+
   if (!HANDLED.includes(type) || !session) {
     return { received: true }
   }
@@ -85,7 +159,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const order = await db
-    .prepare('SELECT id, provider, amount, currency, status FROM orders WHERE id = ?')
+    .prepare('SELECT id, provider, amount, currency, status, user_id, browse_item_id FROM orders WHERE id = ?')
     .bind(orderId)
     .first<OrderRow>()
 
@@ -120,16 +194,11 @@ export default defineEventHandler(async (event) => {
     return { received: true }
   }
 
-  // Symmetric with the PayPal side (which treats an unreadable amount as a
-  // mismatch, never a pass): a missing/non-numeric amount_total used to
-  // skip this guard entirely and let the order complete unverified. Also
-  // verify currency, which was never checked at all -- Stripe returns it
-  // lowercase ("eur"), the column stores it uppercase ("EUR"), hence the
-  // case-insensitive compare.
+  // Amount and currency both verified by the shared check in
+  // server/utils/orderVerification.ts -- shared with the admin reconcile
+  // endpoint so a payment this path refuses cannot be forced through there.
   const expectedAmountInCents = Math.round(order.amount * 100)
-  const amountMatches = typeof session.amount_total === 'number' && session.amount_total === expectedAmountInCents
-  const currencyMatches = typeof session.currency === 'string' && session.currency.toUpperCase() === order.currency.toUpperCase()
-  if (!amountMatches || !currencyMatches) {
+  if (!stripeChargeMatchesOrder(session.amount_total, session.currency, order.amount, order.currency)) {
     // Marker kept as "amount mismatch" (even when only currency disagrees)
     // because the README's reconciliation section greps for this exact
     // string -- see the "Purchases" section.
@@ -143,12 +212,40 @@ export default defineEventHandler(async (event) => {
     return { received: true }
   }
 
+  // Does this buyer ALREADY own this item through a different order?
+  //
+  // The reuse path in server/api/checkout/stripe.post.ts prevents a second
+  // session being minted for the same purchase, which is what stops this
+  // happening going forward. This check is the safety net for the orders
+  // that path cannot cover: two sessions created before it existed, or two
+  // genuinely concurrent requests that both got past the reuse lookup.
+  //
+  // The money HAS been captured, so the order is still completed -- refusing
+  // to record it would leave a real payment with no row. What changes is
+  // needs_refund, which marks that this particular payment bought nothing
+  // (access is boolean; they already had it) and is therefore owed back.
+  const duplicate = await db
+    .prepare(
+      `SELECT id FROM orders
+       WHERE user_id = ? AND browse_item_id = ? AND status = 'completed' AND id != ?
+       LIMIT 1`
+    )
+    .bind(order.user_id, order.browse_item_id, orderId)
+    .first<{ id: number }>()
+
+  if (duplicate) {
+    console.error(
+      `[stripe-webhook] order ${orderId} is a DUPLICATE purchase: user ${order.user_id} already owns `
+      + `item ${order.browse_item_id} via order ${duplicate.id}. Completing and flagging for refund.`
+    )
+  }
+
   const result = await db
     .prepare(
-      `UPDATE orders SET status = 'completed', provider_reference = ?, updated_at = ?
+      `UPDATE orders SET status = 'completed', provider_reference = ?, needs_refund = ?, updated_at = ?
        WHERE id = ? AND provider = 'stripe' AND status != 'completed'`
     )
-    .bind(session.payment_intent ?? session.id, now, orderId)
+    .bind(session.payment_intent ?? session.id, duplicate ? 1 : 0, now, orderId)
     .run()
 
   if (!result.meta?.changes) {

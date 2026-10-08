@@ -168,10 +168,12 @@
                 accept=".zip,.rar,.7z,.schem,.schematic,.litematic,.mcworld,.pdf"
                 :disabled="uploadingDeliverable"
                 icon="i-lucide-file-up"
-                label="Click or drop a file to upload (zip, rar, 7z, schem, schematic, litematic, mcworld, pdf — max 25 MB)"
+                label="Click or drop a file to upload (zip, rar, 7z, schem, schematic, litematic, mcworld, pdf)"
                 @update:model-value="onDeliverableFileSelected"
               />
-              <p v-if="uploadingDeliverable" class="text-text/50 text-xs">Uploading…</p>
+              <p v-if="uploadingDeliverable" class="text-text/50 text-xs">
+                Uploading… {{ deliverableUploadProgress }}%
+              </p>
               <p v-if="deliverableUploadError" class="text-red-400 text-xs">{{ deliverableUploadError }}</p>
             </div>
           </UFormField>
@@ -284,6 +286,7 @@ const uploadError = ref('')
 
 const selectedDeliverableFile = ref<File | null>(null)
 const uploadingDeliverable = ref(false)
+const deliverableUploadProgress = ref(0)
 const deliverableUploadError = ref('')
 const deliverableFilename = ref('')
 
@@ -309,26 +312,91 @@ async function onImageFileSelected(file: File | null) {
   }
 }
 
+// Chunked upload, because the single-request endpoint buffers the whole body
+// in a 128 MiB isolate and so could not take a file over ~25 MB -- far too
+// small for a real world export. The browser slices the file and each request
+// carries one part, so peak server memory is one part no matter how big the
+// file is.
+//
+// The formGeneration guard is re-checked after every part, not just at the
+// end: an upload of a multi-gigabyte file runs for minutes, and without this
+// a part landing after the admin switched to editing a different product
+// would attach this file to that product. (Same hazard the single-shot
+// version guarded, just with many more await points to cover.)
 async function onDeliverableFileSelected(file: File | null) {
   if (!file) return
   const generation = formGeneration.value
   uploadingDeliverable.value = true
   deliverableUploadError.value = ''
+  deliverableUploadProgress.value = 0
+
+  let key = ''
+  let uploadId = ''
+
   try {
-    const body = new FormData()
-    body.append('file', file)
-    const res = await $fetch<{ key: string, filename: string }>('/api/admin/upload-file', { method: 'POST', body })
+    const started = await $fetch<{ key: string, uploadId: string, partSize: number }>(
+      '/api/admin/upload-file/start',
+      { method: 'POST', body: { filename: file.name } }
+    )
+    key = started.key
+    uploadId = started.uploadId
+
+    const partSize = started.partSize
+    // Math.max(1, ...) so a zero-byte file still sends one (empty) part and
+    // gets rejected by the server's own empty-body check, rather than
+    // completing with no parts at all.
+    const totalParts = Math.max(1, Math.ceil(file.size / partSize))
+    const parts: { partNumber: number, etag: string }[] = []
+
+    for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+      if (generation !== formGeneration.value) {
+        await abortDeliverableUpload(key, uploadId)
+        return
+      }
+
+      const slice = file.slice((partNumber - 1) * partSize, partNumber * partSize)
+      const uploaded = await $fetch<{ partNumber: number, etag: string }>(
+        `/api/admin/upload-file/part?key=${encodeURIComponent(key)}&uploadId=${encodeURIComponent(uploadId)}&partNumber=${partNumber}`,
+        { method: 'PUT', body: slice }
+      )
+      parts.push(uploaded)
+      deliverableUploadProgress.value = Math.round((partNumber / totalParts) * 100)
+    }
+
+    if (generation !== formGeneration.value) {
+      await abortDeliverableUpload(key, uploadId)
+      return
+    }
+
+    const done = await $fetch<{ key: string, filename: string }>(
+      '/api/admin/upload-file/complete',
+      { method: 'POST', body: { key, uploadId, parts } }
+    )
+
     if (generation === formGeneration.value) {
-      form.download_key = res.key
-      deliverableFilename.value = res.filename
+      form.download_key = done.key
+      deliverableFilename.value = done.filename
     }
   } catch (e: unknown) {
+    // Leave no orphaned parts behind on any failure.
+    if (key && uploadId) await abortDeliverableUpload(key, uploadId)
     if (generation === formGeneration.value) {
       deliverableUploadError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Upload failed.'
     }
   } finally {
     uploadingDeliverable.value = false
+    deliverableUploadProgress.value = 0
     selectedDeliverableFile.value = null
+  }
+}
+
+// Best-effort cleanup: if this fails there is nothing more the UI can do, and
+// surfacing it would replace the real error with a cleanup error.
+async function abortDeliverableUpload(key: string, uploadId: string) {
+  try {
+    await $fetch('/api/admin/upload-file/abort', { method: 'POST', body: { key, uploadId } })
+  } catch {
+    // Intentionally ignored -- see above.
   }
 }
 
