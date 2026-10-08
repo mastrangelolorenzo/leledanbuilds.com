@@ -78,12 +78,15 @@
           <span class="text-text/50 text-[11px] uppercase tracking-[0.2em] font-bold">We accept</span>
           <ul class="flex flex-wrap items-center justify-center gap-2.5">
             <li v-for="method in paymentMethods" :key="method.name" class="flex items-center">
-              <span
-                class="flex items-center justify-center h-8 w-12 rounded-md shadow-sm transition-transform duration-200 hover:scale-105"
-                :class="[method.chip, method.color]"
-              >
-                <UIcon :name="method.icon" class="text-2xl" :aria-label="method.name" role="img" />
-              </span>
+              <img
+                :src="method.src"
+                :alt="method.name"
+                width="780"
+                height="500"
+                loading="lazy"
+                decoding="async"
+                class="h-9 w-auto transition-transform duration-200 hover:scale-105"
+              />
             </li>
           </ul>
         </div>
@@ -100,25 +103,26 @@
   // account too. PayPal is listed because the integration ships with the
   // site — it only goes live once its credentials are configured.
   //
-  // Each mark gets its official brand colour, on a chip rather than directly
-  // on the footer: Visa (#1A1F71) and PayPal (#003087) are near-black navy,
-  // so on this dark background they would be all but invisible. A light chip
-  // is also how these badges appear in the wild, so it reads as intended
-  // rather than as a workaround.
+  // Real full-colour brand badges (public/payment/*.svg) rather than the
+  // monochrome icon set: those take currentColor, so Visa (#1A1F71) and
+  // PayPal (#003087) came out as near-black navy that all but vanished
+  // against this dark background.
   //
-  // Klarna is the exception that proves the rule — its badge is black on its
-  // own pink (#FFB3C7), and pink-on-white would be illegible — hence the
-  // per-method chip colour instead of one shared white.
+  // The four card/wallet badges are the MIT-licensed flat-rounded set from
+  // aaronfagan/svg-credit-card-payment-icons, vendored into public/ rather
+  // than hot-linked from a CDN: a third-party CDN going down or changing a
+  // path would silently break the footer, and it would leak every visitor's
+  // request to another host.
   //
-  // Colours are Tailwind arbitrary values rather than inline styles so they
-  // go through the normal class pipeline; they are source literals, never
-  // user input.
+  // klarna.svg is built locally to match that set's 780x500 / rx=40 shape,
+  // because the set has no Klarna. It is Klarna's real badge — their pink
+  // with the wordmark in near-black — not an invented one.
   const paymentMethods = [
-    { name: 'Visa', icon: 'i-simple-icons-visa', chip: 'bg-white', color: 'text-[#1A1F71]' },
-    { name: 'Mastercard', icon: 'i-simple-icons-mastercard', chip: 'bg-white', color: 'text-[#EB001B]' },
-    { name: 'American Express', icon: 'i-simple-icons-americanexpress', chip: 'bg-white', color: 'text-[#2E77BC]' },
-    { name: 'PayPal', icon: 'i-simple-icons-paypal', chip: 'bg-white', color: 'text-[#003087]' },
-    { name: 'Klarna', icon: 'i-simple-icons-klarna', chip: 'bg-[#FFB3C7]', color: 'text-black' },
+    { name: 'Visa', src: '/payment/visa.svg' },
+    { name: 'Mastercard', src: '/payment/mastercard.svg' },
+    { name: 'American Express', src: '/payment/amex.svg' },
+    { name: 'PayPal', src: '/payment/paypal.svg' },
+    { name: 'Klarna', src: '/payment/klarna.svg' },
   ]
 
   const socialLinks = [
