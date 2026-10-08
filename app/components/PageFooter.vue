@@ -78,14 +78,18 @@
           <span class="text-text/50 text-[11px] uppercase tracking-[0.2em] font-bold">We accept</span>
           <ul class="flex flex-wrap items-center justify-center gap-2.5">
             <li v-for="method in paymentMethods" :key="method.name" class="flex items-center">
+              <!-- width/height must match the SVGs' real 512x512 box: they
+                   are the intrinsic aspect-ratio hint the browser reserves
+                   space with, so a stale pair here causes layout shift as
+                   the footer loads. -->
               <img
                 :src="method.src"
                 :alt="method.name"
-                width="780"
-                height="500"
+                width="512"
+                height="512"
                 loading="lazy"
                 decoding="async"
-                class="h-9 w-auto transition-transform duration-200 hover:scale-105"
+                class="h-10 w-10 transition-transform duration-200 hover:scale-105"
               />
             </li>
           </ul>
