@@ -123,36 +123,37 @@
           <UFormField label="Difficulty">
             <USelect v-model="form.difficulty" :items="DIFFICULTIES" placeholder="Difficulty" class="w-full" />
           </UFormField>
+          <!-- Select only: no create-item. Terms are managed on /app/taxonomies,
+               and the server now rejects one it does not know. Letting the
+               form invent a term here is what filled the lists with typos. -->
           <UFormField label="Build type">
             <USelectMenu
               v-model="form.build_type"
-              :items="buildTypeOptions ?? []"
-              create-item
-              placeholder="Select or type to create a new build type"
+              :items="buildTypeChoices"
+              placeholder="Select a build type"
               class="w-full"
-              @create="(item: string) => { onCreateTaxonomyTerm(item, buildTypeOptions); form.build_type = item }"
             />
           </UFormField>
           <UFormField label="Theme">
             <USelectMenu
               v-model="form.theme"
-              :items="themeOptions ?? []"
-              create-item
-              placeholder="Select or type to create a new theme"
+              :items="themeChoices"
+              placeholder="Select a theme"
               class="w-full"
-              @create="(item: string) => { onCreateTaxonomyTerm(item, themeOptions); form.theme = item }"
             />
           </UFormField>
           <UFormField label="Category">
             <USelectMenu
               v-model="form.category"
-              :items="categoryOptions ?? []"
-              create-item
-              placeholder="Select or type to create a new category"
+              :items="categoryChoices"
+              placeholder="Select a category"
               class="w-full"
-              @create="(item: string) => { onCreateTaxonomyTerm(item, categoryOptions); form.category = item }"
             />
           </UFormField>
+          <p class="text-text/40 text-xs -mt-1">
+            Missing one?
+            <NuxtLink to="/app/taxonomies" class="text-primary hover:text-secondary transition-colors">Manage taxonomies</NuxtLink>
+          </p>
           <UFormField label="Release date">
             <UInput v-model="form.released" type="date" placeholder="Released" class="w-full" />
           </UFormField>
@@ -254,15 +255,21 @@ async function saveDifficultyColor(level: typeof DIFFICULTIES[number]) {
   }
 }
 
-function onCreateTaxonomyTerm(name: string, options: Ref<string[] | null>) {
-  // Optimistically add it locally so it's immediately selectable and shows
-  // in the dropdown; the actual DB row gets created for real when the item
-  // form is submitted (server/api/browse-items' create/update routes call
-  // ensureTaxonomyTerm, which inserts it if it's genuinely new — Task 3).
-  if (options.value && !options.value.includes(name)) {
-    options.value = [...options.value, name].sort()
+// An item saved before taxonomies were managed can hold a term that is no
+// longer in the list. Including the current value keeps it selected and
+// visible instead of the field appearing blank -- which would look like the
+// product had no category, and would silently change it on the next save.
+function withCurrent(options: string[] | null, current: string): string[] {
+  const list = options ?? []
+  if (current && !list.some(o => o.toLowerCase() === current.toLowerCase())) {
+    return [current, ...list]
   }
+  return list
 }
+
+const buildTypeChoices = computed(() => withCurrent(buildTypeOptions.value, form.build_type))
+const themeChoices = computed(() => withCurrent(themeOptions.value, form.theme))
+const categoryChoices = computed(() => withCurrent(categoryOptions.value, form.category))
 
 const editing = ref(false)
 const saving = ref(false)
