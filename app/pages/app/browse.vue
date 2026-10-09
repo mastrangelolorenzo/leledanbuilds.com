@@ -351,6 +351,7 @@ async function onDeliverableFileSelected(file: File | null) {
     for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
       if (generation !== formGeneration.value) {
         await abortDeliverableUpload(key, uploadId)
+        deliverableUploadError.value = 'Upload cancelled because the form was changed.'
         return
       }
 
@@ -365,6 +366,7 @@ async function onDeliverableFileSelected(file: File | null) {
 
     if (generation !== formGeneration.value) {
       await abortDeliverableUpload(key, uploadId)
+      deliverableUploadError.value = 'Upload cancelled because the form was changed.'
       return
     }
 
@@ -380,14 +382,37 @@ async function onDeliverableFileSelected(file: File | null) {
   } catch (e: unknown) {
     // Leave no orphaned parts behind on any failure.
     if (key && uploadId) await abortDeliverableUpload(key, uploadId)
-    if (generation === formGeneration.value) {
-      deliverableUploadError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Upload failed.'
-    }
+    // Report unconditionally, NOT only when the generation still matches.
+    // Suppressing the message on a stale generation meant a failed upload
+    // could finish in complete silence -- the operator saw the progress line
+    // vanish and nothing else, with no way to tell a failure from a success.
+    deliverableUploadError.value = describeUploadError(e)
+    console.error('[deliverable-upload] failed', e)
   } finally {
     uploadingDeliverable.value = false
     deliverableUploadProgress.value = 0
     selectedDeliverableFile.value = null
   }
+}
+
+// Turns whatever $fetch threw into something an operator can act on. The
+// previous version read only data.statusMessage and fell back to a bare
+// "Upload failed.", which hid the two things that actually identify the
+// cause: the HTTP status (401 means the session expired, 413 too large, 5xx
+// server-side) and a network-level failure, which carries no status at all.
+function describeUploadError(e: unknown): string {
+  const err = e as { statusCode?: number, status?: number, data?: { statusMessage?: string }, message?: string }
+  const status = err.statusCode ?? err.status
+  const detail = err.data?.statusMessage ?? err.message
+  if (status === 401 || status === 403) {
+    return 'Your admin session expired. Reload the page and log in again.'
+  }
+  if (status) {
+    return `Upload failed (HTTP ${status})${detail ? `: ${detail}` : ''}`
+  }
+  // No status at all: the request never got a response -- offline, blocked,
+  // or the connection dropped mid-part.
+  return `Upload failed: ${detail ?? 'the request did not reach the server.'}`
 }
 
 // Best-effort cleanup: if this fails there is nothing more the UI can do, and
