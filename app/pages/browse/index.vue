@@ -74,6 +74,24 @@
                 </button>
               </div>
             </div>
+
+            <div class="bg-background-secondary border border-white/10 rounded-2xl p-5">
+              <h3 class="text-text/50 text-xs uppercase tracking-widest font-bold mb-4">Category</h3>
+              <div class="flex flex-col gap-1">
+                <button
+                  v-for="category in categories"
+                  :key="category"
+                  type="button"
+                  class="text-left px-2 py-1.5 rounded-lg text-sm font-semibold transition-colors duration-200"
+                  :class="activeCategories.includes(category)
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-text/70 hover:text-primary hover:bg-white/5'"
+                  @click="toggleFilter(activeCategories, category)"
+                >
+                  {{ category }}
+                </button>
+              </div>
+            </div>
           </aside>
 
           <!-- Results -->
@@ -238,11 +256,43 @@ if (!user.value) {
   user.value = me.value ?? null
 }
 
-const buildTypes = [...new Set(products.value.map((p) => p.build_type))];
-const themes = [...new Set(products.value.map((p) => p.theme))];
+// The term lists come from /api/taxonomies, which returns them in the order
+// the owner arranged in the admin. Previously they were derived from the
+// products with [...new Set(...)], which produced whatever order the rows
+// happened to arrive in -- so the filter order was effectively arbitrary and
+// could change as products were added.
+const { data: taxonomies } = await useFetch<{
+  build_types: string[]
+  themes: string[]
+  categories: string[]
+}>('/api/taxonomies', { retry: false })
+
+// Only terms that at least one build actually uses. A configured term with
+// no builds behind it would be a filter that always returns nothing, which
+// reads as a broken page rather than an empty category.
+function orderedInUse(configured: string[] | undefined, used: Set<string>): string[] {
+  const inOrder = (configured ?? []).filter(name => used.has(name))
+  // Anything a build uses but the list does not know about still has to be
+  // filterable -- otherwise those builds become unreachable from the
+  // sidebar. They go last, since they have no configured position.
+  const known = new Set(inOrder)
+  const extras = [...used].filter(name => !known.has(name)).sort()
+  return [...inOrder, ...extras]
+}
+
+const buildTypes = computed(() =>
+  orderedInUse(taxonomies.value?.build_types, new Set(products.value.map(p => p.build_type)))
+)
+const themes = computed(() =>
+  orderedInUse(taxonomies.value?.themes, new Set(products.value.map(p => p.theme)))
+)
+const categories = computed(() =>
+  orderedInUse(taxonomies.value?.categories, new Set(products.value.map(p => p.category)))
+)
 
 const activeBuildTypes = ref<string[]>([]);
 const activeThemes = ref<string[]>([]);
+const activeCategories = ref<string[]>([]);
 
 function toggleFilter(list: string[], value: string) {
   const index = list.indexOf(value);
@@ -257,7 +307,8 @@ const filteredProducts = computed(() =>
   products.value.filter(
     (p) =>
       (activeBuildTypes.value.length === 0 || activeBuildTypes.value.includes(p.build_type)) &&
-      (activeThemes.value.length === 0 || activeThemes.value.includes(p.theme))
+      (activeThemes.value.length === 0 || activeThemes.value.includes(p.theme)) &&
+      (activeCategories.value.length === 0 || activeCategories.value.includes(p.category))
   )
 );
 
@@ -273,7 +324,7 @@ const paginatedProducts = computed(() => {
   return filteredProducts.value.slice(start, start + pageSize);
 });
 
-watch([activeBuildTypes, activeThemes], () => {
+watch([activeBuildTypes, activeThemes, activeCategories], () => {
   currentPage.value = 1;
 }, { deep: true });
 </script>

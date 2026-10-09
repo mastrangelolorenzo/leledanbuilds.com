@@ -47,14 +47,28 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap gap-2 mb-4">
+        <p v-if="group.terms.length > 1" class="text-text/35 text-xs mb-2">
+          Drag to reorder — this is the order the site's filters use.
+        </p>
+        <div class="flex flex-col gap-1.5 mb-4">
           <div
-            v-for="term in group.terms"
+            v-for="(term, index) in group.terms"
             :key="term.id"
-            class="inline-flex items-center gap-2 bg-black/30 border border-white/15 rounded-full pl-3 pr-1.5 py-1"
+            draggable="true"
+            class="flex items-center gap-2 bg-black/30 border rounded-xl pl-2 pr-1.5 py-1.5 transition-colors"
+            :class="[
+              dragOverKey === `${group.kind}:${index}` ? 'border-primary/60 bg-primary/5' : 'border-white/15',
+              draggingKey === `${group.kind}:${index}` ? 'opacity-40' : '',
+            ]"
+            @dragstart="onDragStart(group, index, $event)"
+            @dragover.prevent="dragOverKey = `${group.kind}:${index}`"
+            @dragleave="dragOverKey === `${group.kind}:${index}` && (dragOverKey = '')"
+            @drop.prevent="onDrop(group, index)"
+            @dragend="onDragEnd"
           >
-            <span class="text-text text-sm">{{ term.name }}</span>
-            <span class="text-text/35 text-[11px]">{{ term.usage_count }}</span>
+            <UIcon name="i-lucide-grip-vertical" class="text-text/25 text-sm cursor-grab shrink-0" />
+            <span class="text-text text-sm flex-1 min-w-0 truncate">{{ term.name }}</span>
+            <span class="text-text/35 text-[11px] shrink-0">{{ term.usage_count }}</span>
             <button
               type="button"
               class="text-text/40 hover:text-primary transition-colors disabled:opacity-40"
@@ -138,6 +152,54 @@ async function run(fn: () => Promise<string>) {
   } finally {
     busy.value = false
   }
+}
+
+// Native HTML5 drag rather than a library: the lists are short, and this
+// project keeps a deliberately small dependency set.
+//
+// The keys are `${kind}:${index}` so a drag can never cross between the
+// three lists -- dropping a theme into the categories list would otherwise
+// send ids the server rightly rejects.
+const draggingKey = ref('')
+const dragOverKey = ref('')
+const dragSource = ref<{ kind: string, index: number } | null>(null)
+
+function onDragStart(group: Group, index: number, e: DragEvent) {
+  dragSource.value = { kind: group.kind, index }
+  draggingKey.value = `${group.kind}:${index}`
+  // Firefox refuses to start a drag unless some data is set.
+  e.dataTransfer?.setData('text/plain', String(index))
+  if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move'
+}
+
+function onDragEnd() {
+  draggingKey.value = ''
+  dragOverKey.value = ''
+  dragSource.value = null
+}
+
+async function onDrop(group: Group, targetIndex: number) {
+  const src = dragSource.value
+  onDragEnd()
+  if (!src || src.kind !== group.kind || src.index === targetIndex) return
+
+  const reordered = [...group.terms]
+  const [moved] = reordered.splice(src.index, 1)
+  if (!moved) return
+  reordered.splice(targetIndex, 0, moved)
+
+  // Show the new order immediately; the request follows. On failure the
+  // reload in run() puts the server's truth back, so a rejected reorder
+  // cannot leave the screen lying about what was saved.
+  group.terms = reordered
+
+  await run(async () => {
+    await $fetch(`/api/admin/taxonomies/${group.kind}/order`, {
+      method: 'PUT',
+      body: { ids: reordered.map(t => t.id) },
+    })
+    return 'Order saved.'
+  })
 }
 
 async function addTerm(group: Group, rawName: string) {

@@ -28,13 +28,16 @@ export default defineEventHandler(async (event) => {
   // COLLATE NOCASE matches how the terms are looked up everywhere else.
   const { results } = await db
     .prepare(`
-      SELECT t.id, t.name, COUNT(b.id) AS usage_count
+      SELECT t.id, t.name, t.sort_order, COUNT(b.id) AS usage_count
       FROM ${taxonomy.table} t
       LEFT JOIN browse_items b ON b.${taxonomy.itemColumn} = t.name COLLATE NOCASE
-      GROUP BY t.id, t.name
-      ORDER BY t.name COLLATE NOCASE ASC
+      GROUP BY t.id, t.name, t.sort_order
+      -- sort_order is the operator's drag order (migration 0017); name is
+      -- only the tie-break, so two terms that somehow share a position still
+      -- come back in a stable sequence rather than an arbitrary one.
+      ORDER BY t.sort_order ASC, t.name COLLATE NOCASE ASC
     `)
-    .all<{ id: number, name: string, usage_count: number }>()
+    .all<{ id: number, name: string, sort_order: number, usage_count: number }>()
 
   // Terms used by a product but missing from the list: these exist because
   // the product form used to create terms implicitly from free text. They
