@@ -37,7 +37,7 @@
       </h1>
 
       <NuxtLink
-        to="/portfolio"
+        to="/browse"
         class="inline-flex items-center gap-4 text-base font-bold uppercase tracking-wide bg-primary text-black rounded-full pl-8 pr-3 py-3 shadow-lg shadow-primary/20 hover:bg-secondary transform hover:scale-105 transition-all duration-300 mt-8"
       >
         <span>Browse builds</span>
