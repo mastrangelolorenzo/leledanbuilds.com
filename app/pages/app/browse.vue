@@ -174,6 +174,9 @@
               <p v-if="uploadingDeliverable" class="text-text/50 text-xs">
                 Uploading… {{ deliverableUploadProgress }}%
               </p>
+              <p v-if="deliverableUploadDone" class="text-green-400 text-xs">
+                Uploaded. Press Save to attach it to this build.
+              </p>
               <p v-if="deliverableUploadError" class="text-red-400 text-xs">{{ deliverableUploadError }}</p>
             </div>
           </UFormField>
@@ -287,6 +290,9 @@ const uploadError = ref('')
 const selectedDeliverableFile = ref<File | null>(null)
 const uploadingDeliverable = ref(false)
 const deliverableUploadProgress = ref(0)
+// Drives the explicit "uploaded, now save" confirmation: an attached file is
+// only held in the form until Save is pressed, which is not obvious.
+const deliverableUploadDone = ref(false)
 const deliverableUploadError = ref('')
 const deliverableFilename = ref('')
 
@@ -329,6 +335,7 @@ async function onDeliverableFileSelected(file: File | null) {
   uploadingDeliverable.value = true
   deliverableUploadError.value = ''
   deliverableUploadProgress.value = 0
+  deliverableUploadDone.value = false
 
   let key = ''
   let uploadId = ''
@@ -377,7 +384,18 @@ async function onDeliverableFileSelected(file: File | null) {
 
     if (generation === formGeneration.value) {
       form.download_key = done.key
-      deliverableFilename.value = done.filename
+      // file.name, not done.filename. The server reads the name back from
+      // the object's customMetadata, and R2's complete() does not reliably
+      // echo metadata that was set when the multipart upload was created --
+      // in production it came back empty, which left `v-if="deliverableFilename"`
+      // false and made a SUCCESSFUL upload look like it had silently done
+      // nothing. The browser has known the name all along; ask it, not R2.
+      deliverableFilename.value = done.filename || file.name
+      deliverableUploadDone.value = true
+    } else {
+      // The file is in R2 and paid for in bandwidth, but the form it belonged
+      // to is gone. Say so rather than discarding the outcome in silence.
+      deliverableUploadError.value = 'Upload finished, but the form had already changed — re-attach the file.'
     }
   } catch (e: unknown) {
     // Leave no orphaned parts behind on any failure.
