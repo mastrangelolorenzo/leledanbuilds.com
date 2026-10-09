@@ -22,11 +22,11 @@ PUBLIC_ORIGIN = "https://leledanbuilds.com"
 # sandbox credentials are rejected by the live host and vice versa.
 PAYPAL_API_BASE = "https://api-m.sandbox.paypal.com"
 
-# Identifies which webhook subscription a delivery belongs to; PayPal's
-# signature verification call takes it as a parameter. It is an identifier,
-# not a credential -- it grants nothing on its own -- so it is fine in a
-# committed file, unlike PAYPAL_CLIENT_SECRET.
-PAYPAL_WEBHOOK_ID = "94G23555DB412604F"
+# PAYPAL_WEBHOOK_ID is deliberately NOT here. It grants nothing on its own --
+# verification also needs PAYPAL_CLIENT_ID/SECRET -- but this repository is
+# public, and publishing the exact webhook subscription an attacker would
+# probe buys us nothing. Set it as a Worker variable in the dashboard
+# alongside the secrets instead.
 
 [assets]
 directory = ".output/public"
