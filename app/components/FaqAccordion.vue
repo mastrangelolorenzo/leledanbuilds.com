@@ -44,7 +44,7 @@ const faqs = [
   },
   {
     question: 'Can I request a custom build?',
-    answer: 'Yes. You can request a custom project from the contact page or by emailing leledanbusiness@gmail.com.',
+    answer: 'Yes. You can request a custom project from the contact page or by emailing leledanbuilds@gmail.com.',
   },
   {
     question: 'Do you offer refunds?',
