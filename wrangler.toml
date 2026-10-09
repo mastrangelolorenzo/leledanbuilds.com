@@ -28,6 +28,17 @@ PAYPAL_API_BASE = "https://api-m.sandbox.paypal.com"
 # probe buys us nothing. Set it as a Worker variable in the dashboard
 # alongside the secrets instead.
 
+# Nuxt generates .output/, which is gitignored, so it does not exist in a
+# fresh clone. Without this, Cloudflare's deploy step runs `wrangler deploy`
+# against a tree that has no entry point and fails with "The entry-point file
+# at .output/server/index.mjs was not found".
+#
+# Declared here rather than as a build command in the Cloudflare dashboard so
+# it is versioned with the code: a dashboard setting is invisible from the
+# repo and silently lost if the project is ever recreated.
+[build]
+command = "npm run build"
+
 [assets]
 directory = ".output/public"
 binding = "ASSETS"
