@@ -33,10 +33,7 @@
           </p>
         </div>
 
-        <p v-if="!products.length" class="text-text/50 text-center py-16">
-          Builds are temporarily unavailable — check back soon.
-        </p>
-        <div v-else class="flex flex-col md:flex-row gap-8">
+        <div class="flex flex-col md:flex-row gap-8">
           <!-- Sidebar -->
           <aside class="w-full md:w-72 shrink-0 flex flex-col gap-6">
             <div class="bg-background-secondary border border-white/10 rounded-2xl p-5">
@@ -157,7 +154,7 @@
               </div>
 
               <p v-if="paginatedProducts.length === 0" class="text-text/50 col-span-full text-center py-16">
-                No builds match the selected filters.
+                {{ products.length ? 'No builds match the selected filters.' : 'No builds here yet — check back soon.' }}
               </p>
             </div>
 
@@ -267,27 +264,28 @@ const { data: taxonomies } = await useFetch<{
   categories: string[]
 }>('/api/taxonomies', { retry: false })
 
-// Only terms that at least one build actually uses. A configured term with
-// no builds behind it would be a filter that always returns nothing, which
-// reads as a broken page rather than an empty category.
-function orderedInUse(configured: string[] | undefined, used: Set<string>): string[] {
-  const inOrder = (configured ?? []).filter(name => used.has(name))
+// EVERY configured term is shown, in the configured order, whether or not a
+// build currently uses it -- the sidebar presents the shop's structure, not
+// just whatever happens to be in stock today. A term with nothing behind it
+// simply returns no results when clicked.
+function orderedTerms(configured: string[] | undefined, used: Set<string>): string[] {
+  const inOrder = configured ?? []
   // Anything a build uses but the list does not know about still has to be
   // filterable -- otherwise those builds become unreachable from the
   // sidebar. They go last, since they have no configured position.
-  const known = new Set(inOrder)
-  const extras = [...used].filter(name => !known.has(name)).sort()
+  const known = new Set(inOrder.map(n => n.toLowerCase()))
+  const extras = [...used].filter(name => name && !known.has(name.toLowerCase())).sort()
   return [...inOrder, ...extras]
 }
 
 const buildTypes = computed(() =>
-  orderedInUse(taxonomies.value?.build_types, new Set(products.value.map(p => p.build_type)))
+  orderedTerms(taxonomies.value?.build_types, new Set(products.value.map(p => p.build_type)))
 )
 const themes = computed(() =>
-  orderedInUse(taxonomies.value?.themes, new Set(products.value.map(p => p.theme)))
+  orderedTerms(taxonomies.value?.themes, new Set(products.value.map(p => p.theme)))
 )
 const categories = computed(() =>
-  orderedInUse(taxonomies.value?.categories, new Set(products.value.map(p => p.category)))
+  orderedTerms(taxonomies.value?.categories, new Set(products.value.map(p => p.category)))
 )
 
 const activeBuildTypes = ref<string[]>([]);
