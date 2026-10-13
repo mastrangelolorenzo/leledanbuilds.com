@@ -35,7 +35,7 @@
           </ul>
           <p>
             Questions about a specific order? Reach out via
-            <a href="mailto:leledanbusiness@gmail.com" class="underline decoration-primary hover:text-primary font-semibold">email</a>
+            <a href="mailto:leledanbuilds@gmail.com" class="underline decoration-primary hover:text-primary font-semibold">email</a>
             or Discord and it will be handled on a case-by-case basis.
           </p>
         </div>

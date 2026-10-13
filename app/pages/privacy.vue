@@ -46,7 +46,7 @@
             <h2 class="font-bold text-primary mb-2 text-xl">6. Your rights</h2>
             <p>
               You may ask at any time to see, correct or delete the personal information held about you by contacting
-              <a href="mailto:leledanbusiness@gmail.com" class="underline decoration-primary hover:text-primary font-semibold">leledanbusiness@gmail.com</a>.
+              <a href="mailto:leledanbuilds@gmail.com" class="underline decoration-primary hover:text-primary font-semibold">leledanbuilds@gmail.com</a>.
             </p>
           </div>
           <div>
