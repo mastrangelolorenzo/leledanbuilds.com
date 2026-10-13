@@ -11,6 +11,10 @@ export default defineConfig({
       // Alias it to a stub so files that import it (e.g. server/lib/smtp.ts)
       // can still be loaded in plain Node under Vitest. See test/stubs/cloudflare-sockets.ts.
       'cloudflare:sockets': fileURLToPath(new URL('./test/stubs/cloudflare-sockets.ts', import.meta.url)),
+      // Nuxt provides `#shared/*` to both the app and the server; Vitest
+      // runs outside Nuxt, so it needs the same mapping to load any module
+      // that imports from shared/.
+      '#shared': fileURLToPath(new URL('./shared', import.meta.url)),
     },
   },
 })

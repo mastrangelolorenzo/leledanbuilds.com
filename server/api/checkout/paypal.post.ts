@@ -1,6 +1,7 @@
 import { requireAuth } from '../../utils/requireAuth'
 import { createPayPalOrder, getPayPalAccessToken } from '../../lib/paypal'
 import { getPublicOrigin } from '../../utils/env'
+import { PAYPAL_MINIMUM_EUROS, meetsPayPalMinimum } from '#shared/payments'
 
 interface Body {
   browse_item_id: number
@@ -56,6 +57,17 @@ export default defineEventHandler(async (event) => {
   if (!deliverable) {
     console.error(`[paypal-checkout] download_key "${item.download_key}" for item ${item.id} not found in R2, refusing checkout`)
     throw createError({ statusCode: 409, statusMessage: 'This item is not yet available for purchase.' })
+  }
+
+  // The product page hides the PayPal button below this price, so reaching
+  // here means a direct API call or a price edited downwards after the page
+  // was rendered. Refuse before the order row is inserted, so a blocked
+  // attempt leaves no 'pending' order behind.
+  if (!meetsPayPalMinimum(item.price)) {
+    throw createError({
+      statusCode: 409,
+      statusMessage: `PayPal is only available on orders of €${PAYPAL_MINIMUM_EUROS} or more — please pay by card instead.`,
+    })
   }
 
   // requireAuth only proves the session cookie is a validly-signed JWT --

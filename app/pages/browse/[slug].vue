@@ -145,6 +145,7 @@
                     Buy with card
                   </UButton>
                   <UButton
+                    v-if="paypalAvailable"
                     class="rounded-full px-6 py-3 font-bold uppercase text-sm"
                     :loading="checkoutLoading === 'paypal'"
                     :disabled="!!checkoutLoading"
@@ -155,6 +156,9 @@
                     Buy with PayPal
                   </UButton>
                 </div>
+                <p v-if="!paypalAvailable" class="text-text/50 text-xs">
+                  PayPal is available on orders of €{{ PAYPAL_MINIMUM_EUROS }} or more.
+                </p>
                 <p v-if="checkoutError" class="text-red-400 text-xs">{{ checkoutError }}</p>
               </div>
             </div>
@@ -201,6 +205,7 @@
 import { computed, ref } from "vue";
 import { useRoute } from "#app";
 import { isValidHexColor } from "../../../server/utils/difficultyColors";
+import { PAYPAL_MINIMUM_EUROS, meetsPayPalMinimum } from "#shared/payments";
 
 interface BrowseItem {
   id: number
@@ -300,6 +305,12 @@ const relatedBuilds = computed(() => {
     )
     .slice(0, 4);
 });
+
+// PayPal's fixed per-transaction fee makes cheap builds not worth selling
+// through it, so the button is hidden below the minimum rather than shown
+// and then rejected by the server. POST /api/checkout/paypal enforces the
+// same rule — this only saves the buyer a pointless click.
+const paypalAvailable = computed(() => !!build.value && meetsPayPalMinimum(build.value.price))
 
 const checkoutLoading = ref<'stripe' | 'paypal' | null>(null)
 const checkoutError = ref('')

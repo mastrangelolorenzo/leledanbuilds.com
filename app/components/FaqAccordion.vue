@@ -33,6 +33,7 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
+import { PAYPAL_MINIMUM_EUROS } from '#shared/payments'
 
 // Shared by app/pages/contact.vue and app/pages/services.vue -- markup,
 // open/close behaviour and the four questions all live here so both pages
@@ -40,7 +41,9 @@ import { ref } from 'vue'
 const faqs = [
   {
     question: 'What payment methods do you accept?',
-    answer: 'We accept PayPal and all major credit cards including Visa, Mastercard, and American Express.',
+    // The minimum is interpolated from the same constant the checkout
+    // enforces, so this answer cannot drift away from the real rule.
+    answer: `We accept PayPal and all major credit cards including Visa, Mastercard, and American Express. PayPal is available on orders of €${PAYPAL_MINIMUM_EUROS} or more.`,
   },
   {
     question: 'Can I request a custom build?',
