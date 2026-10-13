@@ -15,7 +15,7 @@
         <button
           v-for="project in projects ?? []"
           :key="project.id"
-          class="group relative text-left rounded-2xl overflow-hidden border-2 border-primary/40 hover:border-primary transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          class="group relative text-left cursor-pointer rounded-2xl overflow-hidden border-2 border-primary/40 hover:border-primary transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           @click="openProject = project"
         >
           <img

@@ -97,8 +97,18 @@
               <div
                 v-for="item in paginatedProducts"
                 :key="item.slug"
-                class="group relative bg-background-secondary border border-white/10 rounded-2xl overflow-hidden flex flex-col transition-transform duration-300 hover:-translate-y-1"
+                class="group relative bg-background-secondary border border-white/10 rounded-2xl overflow-hidden flex flex-col transition-transform duration-300 hover:-translate-y-1 cursor-pointer"
               >
+                <!-- Stretched link: makes the WHOLE card open the build, so
+                     the pointer cursor above is telling the truth rather
+                     than promising a click that only the button honours.
+                     z-0 keeps it beneath the like button and the footer row,
+                     which carry z-10 and stay independently clickable. -->
+                <NuxtLink
+                  :to="`/browse/${item.slug}`"
+                  class="absolute inset-0 z-0"
+                  :aria-label="`View ${item.title}`"
+                />
                 <img
                   :src="item.image_url"
                   :alt="item.title"
@@ -140,7 +150,7 @@
                     </span>
                   </div>
 
-                  <div class="flex items-center justify-between mt-auto">
+                  <div class="relative z-10 flex items-center justify-between mt-auto">
                     <span class="text-primary font-black text-2xl">€{{ item.price }}</span>
                     <NuxtLink
                       :to="`/browse/${item.slug}`"
