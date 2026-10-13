@@ -62,8 +62,8 @@
             <UIcon name="i-lucide-mail" />
             Contact
           </h3>
-          <a href="mailto:leledanbusiness@gmail.com" class="text-text/80 hover:text-primary transition-colors text-sm">
-            leledanbusiness@gmail.com
+          <a href="mailto:leledanbuilds@gmail.com" class="text-text/80 hover:text-primary transition-colors text-sm">
+            leledanbuilds@gmail.com
             <span class="block text-text/50 text-xs">For business inquiries</span>
           </a>
           <span class="text-text/80 text-sm">
@@ -148,7 +148,7 @@
     },
     {
       icon: "i-simple-icons-gmail",
-      url: "mailto:leledanbusiness@gmail.com",
+      url: "mailto:leledanbuilds@gmail.com",
     },
     {
       icon: "i-simple-icons-telegram",

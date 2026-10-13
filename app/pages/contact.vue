@@ -106,7 +106,7 @@ const MAX_MESSAGE_LENGTH = 2000
 
 const channels = [
   { name: 'Instagram', handle: '@leledan.builds', icon: 'i-simple-icons-instagram', url: 'https://www.instagram.com/leledan.builds/' },
-  { name: 'Email', handle: 'leledanbusiness@gmail.com', icon: 'i-simple-icons-gmail', url: 'mailto:leledanbusiness@gmail.com' },
+  { name: 'Email', handle: 'leledanbuilds@gmail.com', icon: 'i-simple-icons-gmail', url: 'mailto:leledanbuilds@gmail.com' },
   { name: 'Discord', handle: '@leledan06', icon: 'i-simple-icons-discord', url: 'https://discord.gg/u9FyUqa6uz' },
   { name: 'YouTube', handle: '@leledan06', icon: 'i-simple-icons-youtube', url: 'https://www.youtube.com/@leledan06' },
 ]
