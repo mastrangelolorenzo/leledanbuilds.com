@@ -320,7 +320,10 @@ const filteredProducts = computed(() =>
   )
 );
 
-const pageSize = 6;
+// A multiple of the widest grid (lg:grid-cols-4), so the last row of a full
+// page is never a ragged two-card remainder. 6 on a 4-column grid produced
+// exactly that: one full row, then a half-empty one.
+const pageSize = 20;
 const currentPage = ref(1);
 
 const totalPages = computed(() =>
