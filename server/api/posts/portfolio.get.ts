@@ -5,5 +5,7 @@ export default defineEventHandler(async (event) => {
   if (!db) {
     throw createError({ statusCode: 503, statusMessage: 'Database unavailable' })
   }
-  return getFeaturedPosts(db, 'portfolio', 4)
+  // No limit: /portfolio is the full gallery. The home page keeps its cap of
+  // 4 because its layout is a fixed four-up row.
+  return getFeaturedPosts(db, 'portfolio')
 })

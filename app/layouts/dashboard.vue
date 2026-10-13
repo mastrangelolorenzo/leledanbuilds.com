@@ -78,6 +78,14 @@
         >
           Taxonomies
         </NuxtLink>
+        <NuxtLink
+          v-if="user?.role === 'admin'"
+          to="/app/hero"
+          class="text-xs font-bold uppercase tracking-wide"
+          :class="isActive('/app/hero') ? 'text-primary' : 'text-text/60'"
+        >
+          Hero
+        </NuxtLink>
         <button class="text-text/60 hover:text-primary transition-colors" aria-label="Log out" @click="logout">
           <UIcon name="i-lucide-log-out" class="text-lg" />
         </button>
@@ -171,6 +179,15 @@
         >
           <UIcon name="i-lucide-tags" class="text-base shrink-0" />
           Taxonomies
+        </NuxtLink>
+        <NuxtLink
+          v-if="user?.role === 'admin'"
+          to="/app/hero"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+          :class="isActive('/app/hero') ? 'bg-primary/10 text-primary' : 'text-text/70 hover:bg-white/5 hover:text-text'"
+        >
+          <UIcon name="i-lucide-image" class="text-base shrink-0" />
+          Hero
         </NuxtLink>
       </nav>
 

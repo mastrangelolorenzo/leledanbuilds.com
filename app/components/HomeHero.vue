@@ -85,13 +85,21 @@ interface Creator {
 }
 const { data: workSeenOn } = await useFetch<Creator[]>('/api/work-seen-on');
 
-const bgImages = [
+// Managed from /app/hero. The fallback is the list this component used to
+// hardcode: if the request fails the hero still has a background rather than
+// rendering as a black box, which is the one thing worse than a stale image.
+const FALLBACK_BACKGROUNDS = [
   "/background/1.webp",
   "/background/2.webp",
   "/background/3.webp",
   "/background/4.webp",
-  // "/background/5.webp",
 ];
+
+const { data: heroBackgrounds } = await useFetch<string[]>("/api/hero-backgrounds", { retry: false });
+
+const bgImages = computed(() =>
+  heroBackgrounds.value?.length ? heroBackgrounds.value : FALLBACK_BACKGROUNDS
+);
 
 const currentBgIndex = ref(0);
 const nextBgIndex = ref<number | null>(null);
@@ -99,9 +107,9 @@ const isCrossfading = ref(false);
 let intervalId: number | null = null;
 let crossfadeTimeout: number | null = null;
 
-const currentBg = computed(() => bgImages[currentBgIndex.value]);
+const currentBg = computed(() => bgImages.value[currentBgIndex.value]);
 const nextBg = computed(() =>
-  nextBgIndex.value !== null ? bgImages[nextBgIndex.value] : undefined,
+  nextBgIndex.value !== null ? bgImages.value[nextBgIndex.value] : undefined,
 );
 
 function imgKey(i: number) {
@@ -113,7 +121,7 @@ function imgKey(i: number) {
 function startLoop() {
   intervalId = window.setInterval(() => {
     isCrossfading.value = true;
-    nextBgIndex.value = (currentBgIndex.value + 1) % bgImages.length;
+    nextBgIndex.value = (currentBgIndex.value + 1) % bgImages.value.length;
 
     crossfadeTimeout = window.setTimeout(() => {
       currentBgIndex.value = nextBgIndex.value as number;

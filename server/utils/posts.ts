@@ -15,15 +15,25 @@ interface D1Like {
   prepare: (sql: string) => PreparedStatementLike
 }
 
+/**
+ * `limit` omitted means every featured post, which is what the portfolio
+ * page wants: it is the full gallery. The home page passes 4 because its
+ * layout is a fixed four-up row.
+ */
 export async function getFeaturedPosts(
   db: D1Like,
   list: 'home' | 'portfolio',
-  limit = 4
+  limit?: number
 ): Promise<Post[]> {
   const filterColumn = list === 'home' ? 'featured_home' : 'featured_portfolio'
   const orderColumn = list === 'home' ? 'sort_order_home' : 'sort_order_portfolio'
-  const sql = `SELECT id, title, slug, image_url, teaser, description FROM posts WHERE ${filterColumn} = 1 ORDER BY ${orderColumn} ASC LIMIT ?`
-  const statement = db.prepare(sql)
-  const { results } = await statement.bind(limit).all()
+  const base = `SELECT id, title, slug, image_url, teaser, description FROM posts WHERE ${filterColumn} = 1 ORDER BY ${orderColumn} ASC`
+
+  if (limit === undefined) {
+    const { results } = await db.prepare(base).bind().all()
+    return results as Post[]
+  }
+
+  const { results } = await db.prepare(`${base} LIMIT ?`).bind(limit).all()
   return results as Post[]
 }
