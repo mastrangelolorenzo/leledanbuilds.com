@@ -4,7 +4,10 @@ import { RATE_LIMITS } from '../utils/rateLimit'
 
 export const INQUIRY_TYPES = ['General Question', 'Custom Build Request', 'Order Support', 'Business Inquiry', 'Other'] as const
 
-const BUSINESS_EMAIL = 'leledanbusiness@gmail.com'
+// Where the contact form delivers. Kept equal to the address shown on the
+// contact page and in the footer: a visitor who writes by hand and one who
+// uses the form must reach the same inbox, or one of the two goes unread.
+const BUSINESS_EMAIL = 'leledanbuilds@gmail.com'
 const MAX_MESSAGE_LENGTH = 2000
 
 interface Body {
@@ -32,7 +35,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Every accepted submission sends mail to the owner's inbox, so without
-  // this the form is an open mail relay pointed at leledanbusiness@gmail.com.
+  // this the form is an open mail relay pointed at BUSINESS_EMAIL.
   // Placed after validation so a malformed flood is rejected before it can
   // consume the caller's own quota.
   await enforceRateLimitByIp(event, RATE_LIMITS.contact)
