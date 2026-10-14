@@ -39,16 +39,18 @@
               </div>
             </td>
             <td class="px-4">
+              <!-- Home keeps its cap: that section is a fixed four-up row, so
+                   a fifth would simply never be shown. The portfolio switch
+                   below has no cap -- it is the full gallery. -->
               <USwitch
                 :model-value="!!post.featured_home"
-                :disabled="!post.featured_home && homeCount >= 4"
+                :disabled="!post.featured_home && homeCount >= HOME_FEATURED_LIMIT"
                 @update:model-value="(v: boolean) => toggleFeature(post, 'home', v)"
               />
             </td>
             <td class="px-4">
               <USwitch
                 :model-value="!!post.featured_portfolio"
-                :disabled="!post.featured_portfolio && portfolioCount >= 4"
                 @update:model-value="(v: boolean) => toggleFeature(post, 'portfolio', v)"
               />
             </td>
@@ -133,8 +135,9 @@ interface Post {
 
 const { data: posts, refresh } = await useFetch<Post[]>('/api/posts')
 
+// The home section renders a fixed four-up row; the portfolio is uncapped.
+const HOME_FEATURED_LIMIT = 4
 const homeCount = computed(() => posts.value?.filter(p => p.featured_home).length ?? 0)
-const portfolioCount = computed(() => posts.value?.filter(p => p.featured_portfolio).length ?? 0)
 
 const editing = ref(false)
 const saving = ref(false)

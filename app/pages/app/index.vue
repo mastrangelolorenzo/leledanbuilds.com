@@ -124,8 +124,10 @@
         </div>
         <div class="bg-background-secondary border border-white/10 rounded-2xl p-5">
           <p class="text-text/50 text-xs uppercase tracking-wide font-semibold mb-2">On portfolio</p>
+          <!-- No "/ 4" here: the portfolio gallery is uncapped. Leaving the
+               denominator in would state a limit that no longer exists. -->
           <p class="text-2xl font-bold text-primary">
-            {{ portfolioCount }}<span class="text-text/40 text-base font-normal"> / 4</span>
+            {{ portfolioCount }}
           </p>
         </div>
       </div>

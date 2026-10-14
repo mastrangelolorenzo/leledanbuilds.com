@@ -13,11 +13,28 @@ interface CountRow {
   count: number
 }
 
+/**
+ * How many posts each list accepts. `home` is a fixed four-up row in
+ * PremiumProjects.vue, so a fifth post there would simply never be
+ * rendered -- the cap is what the layout can show. `portfolio` is the full
+ * gallery and takes any number, which is why it maps to null rather than to
+ * a large number: there is no limit to state.
+ */
+const FEATURE_LIMITS: Record<'home' | 'portfolio', number | null> = {
+  home: 4,
+  portfolio: null,
+}
+
 export async function assertFeatureLimit(
   db: { prepare: (sql: string) => { bind: (...args: unknown[]) => { first: <T>() => Promise<T | null> } } },
   list: 'home' | 'portfolio',
   excludeId: number | null
 ): Promise<void> {
+  const limit = FEATURE_LIMITS[list]
+  // An uncapped list needs no count at all -- returning here also saves the
+  // query on every portfolio feature toggle.
+  if (limit === null) return
+
   const column = list === 'home' ? 'featured_home' : 'featured_portfolio'
   const sql = excludeId !== null
     ? `SELECT COUNT(*) as count FROM posts WHERE ${column} = 1 AND id != ?`
@@ -27,10 +44,10 @@ export async function assertFeatureLimit(
   const bound = excludeId !== null ? statement.bind(excludeId) : statement.bind()
   const row = await bound.first<CountRow>()
 
-  if ((row?.count ?? 0) >= 4) {
+  if ((row?.count ?? 0) >= limit) {
     throw createError({
       statusCode: 409,
-      statusMessage: `At most 4 posts can be featured on "${list}". Un-feature one first.`,
+      statusMessage: `At most ${limit} posts can be featured on "${list}". Un-feature one first.`,
     })
   }
 }

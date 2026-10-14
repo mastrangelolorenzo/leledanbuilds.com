@@ -20,9 +20,24 @@ describe('assertFeatureLimit', () => {
     await expect(assertFeatureLimit(db as never, 'home', null)).resolves.toBeUndefined()
   })
 
-  it('throws a 409 when exactly 4 posts are already featured', async () => {
+  it('throws a 409 when exactly 4 posts are already featured on home', async () => {
     const db = fakeDbWithCount(4)
     await expect(assertFeatureLimit(db as never, 'home', null)).rejects.toMatchObject({ statusCode: 409 })
+  })
+
+  // The portfolio is the full gallery, not a fixed-size row: it takes any
+  // number of posts. This is the server half of that -- without it the
+  // admin switch can be enabled all it likes and the 5th post is still
+  // refused with a 409.
+  it('never throws for the portfolio, however many are already featured', async () => {
+    const db = fakeDbWithCount(400)
+    await expect(assertFeatureLimit(db as never, 'portfolio', null)).resolves.toBeUndefined()
+  })
+
+  it('does not even count the portfolio rows', async () => {
+    const db = fakeDbWithCount(400)
+    await assertFeatureLimit(db as never, 'portfolio', 7)
+    expect(db.prepare).not.toHaveBeenCalled()
   })
 })
 
