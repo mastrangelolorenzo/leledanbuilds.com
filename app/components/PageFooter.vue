@@ -147,8 +147,8 @@
       url: "https://www.youtube.com/@leledan06",
     },
     {
-      icon: "i-simple-icons-gmail",
-      url: "mailto:leledanbuilds@gmail.com",
+      icon: "i-simple-icons-patreon",
+      url: "https://www.patreon.com/cw/leledan06",
     },
     {
       icon: "i-simple-icons-telegram",
