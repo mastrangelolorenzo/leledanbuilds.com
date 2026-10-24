@@ -91,7 +91,20 @@
 
             <div class="mt-auto">
               <div class="flex items-center gap-2 mb-5">
+                <!-- Skinpacks are rated 1-5; builds keep the like button.
+                     One or the other, never both: they are two ways of
+                     asking the same visitor the same question. -->
+                <StarRating
+                  v-if="isSkinpack"
+                  :browse-item-id="build.id"
+                  :slug="build.slug"
+                  :rating-avg="build.rating_avg ?? 0"
+                  :rating-count="build.rating_count ?? 0"
+                  :my-rating="build.my_rating ?? 0"
+                  size="lg"
+                />
                 <LikeButton
+                  v-else
                   :browse-item-id="build.id"
                   :slug="build.slug"
                   :like-count="build.like_count"
@@ -228,6 +241,10 @@ interface BrowseItem {
   has_download: boolean
   like_count: number
   liked_by_me?: boolean
+  section?: string
+  rating_avg?: number
+  rating_count?: number
+  my_rating?: number
 }
 
 const difficultyLevels: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3, Expert: 4 }
@@ -321,6 +338,8 @@ const paypalAvailable = computed(() => !!build.value && meetsPayPalMinimum(build
 // Skinpacks ship free for now (price 0). The server refuses checkout on a
 // zero-priced row anyway -- this just keeps the page from offering a Buy
 // button that could only fail.
+const isSkinpack = computed(() => build.value?.section === 'skinpacks')
+
 const isFree = computed(() => !!build.value && !(build.value.price > 0))
 
 const checkoutLoading = ref<'stripe' | 'paypal' | null>(null)

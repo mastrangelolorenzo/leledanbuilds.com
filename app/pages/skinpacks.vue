@@ -67,15 +67,18 @@
                   class="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500"
                   draggable="false"
                 />
-                <LikeButton
-                  :browse-item-id="item.id"
-                  :slug="item.slug"
-                  :like-count="item.like_count"
-                  :liked-by-me="item.liked_by_me ?? false"
-                  class="absolute top-3 right-3 z-10"
-                />
                 <div class="p-5 flex flex-col flex-1">
                   <h3 class="text-white font-extrabold uppercase text-lg tracking-wide mb-3">{{ item.title }}</h3>
+
+                  <div class="relative z-10 mb-3">
+                    <StarRating
+                      :browse-item-id="item.id"
+                      :slug="item.slug"
+                      :rating-avg="item.rating_avg"
+                      :rating-count="item.rating_count"
+                      :my-rating="item.my_rating ?? 0"
+                    />
+                  </div>
 
                   <div class="flex flex-wrap items-center gap-2 mb-4">
                     <span class="px-2.5 py-1 rounded-full border border-primary/40 text-primary text-[11px] font-semibold uppercase tracking-wide">{{ item.category }}</span>
@@ -151,8 +154,9 @@ interface BrowseItem {
   theme: string
   category: string
   section: string
-  like_count: number
-  liked_by_me?: boolean
+  rating_avg: number
+  rating_count: number
+  my_rating?: number
 }
 
 // Same endpoint as /browse -- skinpacks are browse_items rows with
@@ -163,7 +167,7 @@ const skinpacks = computed(() =>
   (fetched.value ?? []).filter(p => p.section === 'skinpacks')
 )
 
-// LikeButton needs to know whether the visitor is logged in: the global
+// StarRating needs to know whether the visitor is logged in: the global
 // middleware only fills useAuthUser() on /app/*, and this is a public page.
 // Same reason as app/pages/browse/index.vue.
 const user = useAuthUser()
