@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { slugify, assertFeatureLimit, isUniqueConstraintError, isValidPrice, isValidDownloadKey } from './postValidation'
+import { slugify, assertFeatureLimit, isUniqueConstraintError, isValidPrice, isValidDownloadKey, isBrowseSection } from './postValidation'
 
 describe('slugify', () => {
   it('lowercases, strips punctuation and hyphenates spaces', () => {
@@ -143,5 +143,21 @@ describe('isValidDownloadKey', () => {
   it('rejects null and undefined', () => {
     expect(isValidDownloadKey(null)).toBe(false)
     expect(isValidDownloadKey(undefined)).toBe(false)
+  })
+})
+
+describe('isBrowseSection', () => {
+  it('accepts the two catalogues', () => {
+    expect(isBrowseSection('builds')).toBe(true)
+    expect(isBrowseSection('skinpacks')).toBe(true)
+  })
+
+  // The column carries a CHECK constraint, so an unvalidated value would
+  // fail the INSERT with a raw SQL error instead of a 400.
+  it('rejects anything else', () => {
+    expect(isBrowseSection('skins')).toBe(false)
+    expect(isBrowseSection('')).toBe(false)
+    expect(isBrowseSection(undefined)).toBe(false)
+    expect(isBrowseSection(null)).toBe(false)
   })
 })

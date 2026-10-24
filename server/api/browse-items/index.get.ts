@@ -14,6 +14,7 @@ interface BrowseItemRow {
   category: string
   released: string
   description: string
+  section: string
   download_key: string | null
 }
 
@@ -32,7 +33,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 503, statusMessage: 'Database unavailable' })
   }
   const { results } = await db
-    .prepare('SELECT id, slug, title, image_url, price, difficulty, build_type, theme, category, released, description, download_key FROM browse_items ORDER BY id ASC')
+    .prepare('SELECT id, slug, title, image_url, price, difficulty, build_type, theme, category, released, description, section, download_key FROM browse_items ORDER BY id ASC')
     .all<BrowseItemRow>()
 
   // Soft session check: an absent/invalid cookie must still return the

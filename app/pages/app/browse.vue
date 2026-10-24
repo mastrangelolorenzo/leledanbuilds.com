@@ -70,7 +70,7 @@
                 </div>
               </div>
             </td>
-            <td class="px-4 text-text/70">€{{ item.price }}</td>
+            <td class="px-4 text-text/70">{{ item.section === 'skinpacks' ? 'Free' : `€${item.price}` }}</td>
             <td class="px-4 text-text/70">{{ item.difficulty }}</td>
             <td class="px-4 text-right whitespace-nowrap">
               <UButton size="xs" variant="ghost" @click="startEdit(item)">Edit</UButton>
@@ -117,10 +117,16 @@
             <p v-if="uploadingImage" class="text-text/50 text-xs mt-1">Uploading…</p>
             <p v-if="uploadError" class="text-red-400 text-xs mt-1">{{ uploadError }}</p>
           </UFormField>
-          <UFormField label="Price (€)">
+          <UFormField label="Section">
+            <USelect v-model="form.section" :items="SECTIONS" placeholder="Section" class="w-full" />
+          </UFormField>
+          <!-- A skinpack is free for now and has no difficulty, so both
+               fields are hidden rather than left to be filled with values
+               nothing reads. The save sends 0 / 'Easy' for them. -->
+          <UFormField v-if="!isSkinpack" label="Price (€)">
             <UInput v-model="form.price" type="number" placeholder="Price" class="w-full" />
           </UFormField>
-          <UFormField label="Difficulty">
+          <UFormField v-if="!isSkinpack" label="Difficulty">
             <USelect v-model="form.difficulty" :items="DIFFICULTIES" placeholder="Difficulty" class="w-full" />
           </UFormField>
           <!-- Select only: no create-item. Terms are managed on /app/taxonomies,
@@ -209,6 +215,7 @@ interface BrowseItem {
   category: string
   released: string
   description: string
+  section: string
   download_key: string | null
   has_download: boolean
 }
@@ -277,7 +284,10 @@ const formError = ref('')
 const listError = ref('')
 const editingId = ref<number | null>(null)
 const formGeneration = ref(0)
+const SECTIONS = ['builds', 'skinpacks'] as const
+
 const form = reactive({
+  section: 'builds' as 'builds' | 'skinpacks',
   title: '',
   image_url: '',
   price: '',
@@ -289,6 +299,8 @@ const form = reactive({
   description: '',
   download_key: null as string | null,
 })
+
+const isSkinpack = computed(() => form.section === 'skinpacks')
 
 const selectedImageFile = ref<File | null>(null)
 const uploadingImage = ref(false)
@@ -453,6 +465,7 @@ async function abortDeliverableUpload(key: string, uploadId: string) {
 function startCreate() {
   formGeneration.value++
   editingId.value = null
+  form.section = 'builds'
   form.title = ''
   form.image_url = ''
   form.price = ''
@@ -476,6 +489,7 @@ function startEdit(item: BrowseItem) {
   editingId.value = item.id
   form.title = item.title
   form.image_url = item.image_url
+  form.section = item.section === 'skinpacks' ? 'skinpacks' : 'builds'
   form.price = String(item.price)
   form.difficulty = item.difficulty
   form.build_type = item.build_type
@@ -497,10 +511,11 @@ async function save() {
   formError.value = ''
   try {
     const body = {
+      section: form.section,
       title: form.title,
       image_url: form.image_url,
-      price: Number(form.price),
-      difficulty: form.difficulty,
+      price: isSkinpack.value ? 0 : Number(form.price),
+      difficulty: isSkinpack.value ? 'Easy' : form.difficulty,
       build_type: form.build_type,
       theme: form.theme,
       category: form.category,

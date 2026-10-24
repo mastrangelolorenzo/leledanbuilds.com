@@ -222,6 +222,7 @@ interface BrowseItem {
   category: string
   released: string
   description: string
+  section: string
   like_count: number
   liked_by_me?: boolean
 }
@@ -231,7 +232,12 @@ const difficultyLevels: Record<string, number> = { Easy: 1, Medium: 2, Hard: 3, 
 const route = useRoute();
 
 const { data: fetchedProducts } = await useFetch<BrowseItem[]>('/api/browse-items')
-const products = computed(() => fetchedProducts.value ?? [])
+// One endpoint serves both catalogues; this page is the builds shop, so the
+// skinpacks (app/pages/skinpacks.vue) are filtered out here rather than by a
+// second request. Rows predating the section column default to 'builds'.
+const products = computed(() =>
+  (fetchedProducts.value ?? []).filter(p => p.section !== 'skinpacks')
+)
 
 // Admin-configurable difficulty dot colours, same source as the detail page
 // (server/api/difficulty-colors). A failed fetch leaves this empty, which

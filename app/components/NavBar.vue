@@ -151,6 +151,11 @@
       icon: 'i-lucide-image',
     },
     {
+      label: 'Skinpacks',
+      to: '/skinpacks',
+      icon: 'i-lucide-shirt',
+    },
+    {
       label: 'Pricing',
       to: '/services',
       icon: 'i-lucide-file-text',

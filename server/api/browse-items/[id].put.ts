@@ -1,5 +1,5 @@
 import { requireAdmin } from '../../utils/requireAdmin'
-import { slugify, isUniqueConstraintError, isValidPrice, isValidDownloadKey } from '../../utils/postValidation'
+import { slugify, isUniqueConstraintError, isValidPrice, isValidDownloadKey, isBrowseSection, BROWSE_SECTIONS } from '../../utils/postValidation'
 import { findTaxonomyTerm } from '../../utils/taxonomy'
 
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Expert'] as const
@@ -15,6 +15,7 @@ interface UpdateBody {
   released: string
   description: string
   download_key?: string | null
+  section?: string
 }
 
 export default defineEventHandler(async (event) => {
@@ -35,6 +36,15 @@ export default defineEventHandler(async (event) => {
   if (hasDownloadKey && body.download_key != null && !isValidDownloadKey(body.download_key)) {
     throw createError({ statusCode: 400, statusMessage: 'download_key has an invalid format.' })
   }
+  // Absent means "leave it alone" (COALESCE below), NOT "make it a build":
+  // a client that does not send the field -- any older form, or a partial
+  // edit -- would otherwise silently move every skinpack it saved into the
+  // builds shop.
+  const section = body.section ?? null
+  if (section !== null && !isBrowseSection(section)) {
+    throw createError({ statusCode: 400, statusMessage: `section must be one of: ${BROWSE_SECTIONS.join(', ')}.` })
+  }
+
   if (!DIFFICULTIES.includes(body.difficulty as typeof DIFFICULTIES[number])) {
     throw createError({ statusCode: 400, statusMessage: `difficulty must be one of: ${DIFFICULTIES.join(', ')}.` })
   }
@@ -72,10 +82,10 @@ export default defineEventHandler(async (event) => {
   try {
     const result = await db
       .prepare(
-        `UPDATE browse_items SET slug = ?, title = ?, image_url = ?, price = ?, difficulty = ?, build_type = ?, theme = ?, category = ?, released = ?, description = ?, download_key = CASE WHEN ? THEN ? ELSE download_key END, updated_at = ?
+        `UPDATE browse_items SET slug = ?, title = ?, image_url = ?, price = ?, difficulty = ?, build_type = ?, theme = ?, category = ?, released = ?, description = ?, section = COALESCE(?, section), download_key = CASE WHEN ? THEN ? ELSE download_key END, updated_at = ?
          WHERE id = ?`
       )
-      .bind(slug, body.title, body.image_url, body.price, body.difficulty, buildType, theme, category, body.released, body.description, hasDownloadKey ? 1 : 0, body.download_key ?? null, new Date().toISOString(), id)
+      .bind(slug, body.title, body.image_url, body.price, body.difficulty, buildType, theme, category, body.released, body.description, section, hasDownloadKey ? 1 : 0, body.download_key ?? null, new Date().toISOString(), id)
       .run()
 
     if (result.meta.changes === 0) {

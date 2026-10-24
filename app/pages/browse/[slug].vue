@@ -102,9 +102,15 @@
               </div>
 
             <div class="flex items-center justify-between pt-6 border-t border-white/10">
-              <span class="text-primary font-black text-4xl">€{{ build.price }}</span>
+              <span class="text-primary font-black text-4xl">{{ isFree ? 'Free' : `€${build.price}` }}</span>
+              <span
+                v-if="isFree"
+                class="inline-flex items-center gap-2 bg-primary/10 border border-primary/30 text-primary font-bold uppercase text-sm rounded-full px-6 py-3"
+              >
+                Free download coming soon
+              </span>
               <NuxtLink
-                v-if="!user"
+                v-else-if="!user"
                 :to="`/app/login?redirect=/browse/${build.slug}`"
                 class="inline-flex items-center gap-2 bg-primary text-black font-bold uppercase text-sm rounded-full px-6 py-3 hover:bg-secondary transition-all duration-300"
               >
@@ -311,6 +317,11 @@ const relatedBuilds = computed(() => {
 // and then rejected by the server. POST /api/checkout/paypal enforces the
 // same rule — this only saves the buyer a pointless click.
 const paypalAvailable = computed(() => !!build.value && meetsPayPalMinimum(build.value.price))
+
+// Skinpacks ship free for now (price 0). The server refuses checkout on a
+// zero-priced row anyway -- this just keeps the page from offering a Buy
+// button that could only fail.
+const isFree = computed(() => !!build.value && !(build.value.price > 0))
 
 const checkoutLoading = ref<'stripe' | 'paypal' | null>(null)
 const checkoutError = ref('')

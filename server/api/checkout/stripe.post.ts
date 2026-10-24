@@ -58,6 +58,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 409, statusMessage: 'This item is not yet available for purchase.' })
   }
 
+  // Skinpacks are free for now, and a free row must never reach a payment
+  // provider: both Stripe and PayPal reject a zero amount, so the buyer
+  // would get a bare provider error instead of an answer. Priced at 0 is
+  // the condition rather than the section, so this keeps holding the day a
+  // build is given away too.
+  if (!(item.price > 0)) {
+    throw createError({ statusCode: 409, statusMessage: 'This item is not for sale.' })
+  }
+
   // requireAuth only proves the session cookie is a validly-signed JWT --
   // it does not prove the userId inside it still exists (e.g. a token
   // minted by a different environment, or an account deleted after the
