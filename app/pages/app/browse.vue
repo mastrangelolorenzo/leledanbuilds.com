@@ -49,6 +49,7 @@
             <th class="py-3 px-4 font-semibold">Item</th>
             <th class="px-4 font-semibold">Price</th>
             <th class="px-4 font-semibold">Difficulty</th>
+            <th class="px-4 font-semibold">On home</th>
             <th class="px-4 font-semibold text-right">Actions</th>
           </tr>
         </thead>
@@ -63,22 +64,35 @@
                 <img :src="item.image_url" :alt="item.title" class="w-12 h-12 rounded-lg object-cover shrink-0 border border-white/10" />
                 <div class="min-w-0">
                   <p class="font-semibold text-text truncate max-w-[220px]">{{ item.title }}</p>
+                  <!-- A skinpack has no build type or theme, so its own
+                       category is the only tag worth showing. -->
                   <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                    <span class="px-2 py-0.5 rounded-full border border-primary/40 text-primary text-[10px] font-semibold uppercase tracking-wide">{{ item.build_type }}</span>
-                    <span class="px-2 py-0.5 rounded-full border border-white/20 text-text/70 text-[10px] font-semibold uppercase tracking-wide">{{ item.theme }}</span>
+                    <span class="px-2 py-0.5 rounded-full border border-primary/40 text-primary text-[10px] font-semibold uppercase tracking-wide">{{ item.section === 'skinpacks' ? item.category : item.build_type }}</span>
+                    <span v-if="item.section !== 'skinpacks'" class="px-2 py-0.5 rounded-full border border-white/20 text-text/70 text-[10px] font-semibold uppercase tracking-wide">{{ item.theme }}</span>
                   </div>
                 </div>
               </div>
             </td>
             <td class="px-4 text-text/70">{{ item.section === 'skinpacks' ? 'Free' : `€${item.price}` }}</td>
-            <td class="px-4 text-text/70">{{ item.difficulty }}</td>
+            <td class="px-4 text-text/70">{{ item.section === 'skinpacks' ? '—' : item.difficulty }}</td>
+            <td class="px-4">
+              <!-- Only skinpacks: the home page's skinpack section is what
+                   this drives. No cap -- it is a plain grid, so a fifth pack
+                   makes another row. -->
+              <USwitch
+                v-if="item.section === 'skinpacks'"
+                :model-value="!!item.featured_home"
+                @update:model-value="(v: boolean) => toggleHome(item, v)"
+              />
+              <span v-else class="text-text/30">—</span>
+            </td>
             <td class="px-4 text-right whitespace-nowrap">
               <UButton size="xs" variant="ghost" @click="startEdit(item)">Edit</UButton>
               <UButton size="xs" variant="ghost" color="error" @click="remove(item)">Delete</UButton>
             </td>
           </tr>
           <tr v-if="!items?.length">
-            <td colspan="4" class="py-10 text-center text-text/40">No browse items yet.</td>
+            <td colspan="5" class="py-10 text-center text-text/40">No browse items yet.</td>
           </tr>
         </tbody>
       </table>
@@ -217,6 +231,7 @@ interface BrowseItem {
   released: string
   description: string
   section: string
+  featured_home: number
   download_key: string | null
   has_download: boolean
 }
@@ -514,6 +529,17 @@ function startEdit(item: BrowseItem) {
   deliverableFilename.value = ''
   deliverableUploadError.value = ''
   editing.value = true
+}
+
+async function toggleHome(item: BrowseItem, value: boolean) {
+  listError.value = ''
+  try {
+    await $fetch(`/api/browse-items/${item.id}/feature`, { method: 'PATCH', body: { value } })
+  } catch (e: unknown) {
+    listError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Could not update the home section.'
+  } finally {
+    await refresh() // also snaps the switch back if the server rejected it
+  }
 }
 
 async function save() {
