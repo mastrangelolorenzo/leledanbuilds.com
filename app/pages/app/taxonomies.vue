@@ -114,7 +114,7 @@ interface Term { id: number, name: string, usage_count: number }
 interface Orphan { name: string, usage_count: number }
 interface Group { kind: string, label: string, terms: Term[], orphans: Orphan[] }
 
-const KINDS = ['categories', 'themes', 'build-types'] as const
+const KINDS = ['categories', 'themes', 'build-types', 'skinpack-categories'] as const
 
 const groups = ref<Group[]>([])
 const newTerm = reactive<Record<string, string>>({})

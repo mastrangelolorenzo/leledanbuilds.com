@@ -120,9 +120,10 @@
           <UFormField label="Section">
             <USelect v-model="form.section" :items="SECTIONS" placeholder="Section" class="w-full" />
           </UFormField>
-          <!-- A skinpack is free for now and has no difficulty, so both
-               fields are hidden rather than left to be filled with values
-               nothing reads. The save sends 0 / 'Easy' for them. -->
+          <!-- A skinpack is free for now and has no difficulty, build type
+               or theme, so those fields are hidden rather than left to be
+               filled with values nothing reads. The save sends 0 and
+               placeholders for them. -->
           <UFormField v-if="!isSkinpack" label="Price (€)">
             <UInput v-model="form.price" type="number" placeholder="Price" class="w-full" />
           </UFormField>
@@ -132,7 +133,7 @@
           <!-- Select only: no create-item. Terms are managed on /app/taxonomies,
                and the server now rejects one it does not know. Letting the
                form invent a term here is what filled the lists with typos. -->
-          <UFormField label="Build type">
+          <UFormField v-if="!isSkinpack" label="Build type">
             <USelectMenu
               v-model="form.build_type"
               :items="buildTypeChoices"
@@ -140,7 +141,7 @@
               class="w-full"
             />
           </UFormField>
-          <UFormField label="Theme">
+          <UFormField v-if="!isSkinpack" label="Theme">
             <USelectMenu
               v-model="form.theme"
               :items="themeChoices"
@@ -148,7 +149,7 @@
               class="w-full"
             />
           </UFormField>
-          <UFormField label="Category">
+          <UFormField :label="isSkinpack ? 'Skinpack category' : 'Category'">
             <USelectMenu
               v-model="form.category"
               :items="categoryChoices"
@@ -224,6 +225,8 @@ const { data: items, refresh } = await useFetch<BrowseItem[]>('/api/browse-items
 const { data: buildTypeOptions } = await useFetch<string[]>('/api/admin/build-types')
 const { data: themeOptions } = await useFetch<string[]>('/api/admin/themes')
 const { data: categoryOptions } = await useFetch<string[]>('/api/admin/categories')
+// Skinpacks have their own category list: the builds terms describe builds.
+const { data: skinpackCategoryOptions } = await useFetch<string[]>('/api/admin/skinpack-categories')
 
 const { data: difficultyColorsData, error: difficultyColorsError } = await useFetch<Record<string, string>>('/api/difficulty-colors')
 const difficultyColorsLoadError = computed(() => difficultyColorsError.value ? 'Could not load difficulty colours. Please refresh the page.' : '')
@@ -266,6 +269,8 @@ async function saveDifficultyColor(level: typeof DIFFICULTIES[number]) {
 // longer in the list. Including the current value keeps it selected and
 // visible instead of the field appearing blank -- which would look like the
 // product had no category, and would silently change it on the next save.
+const isSkinpack = computed(() => form.section === 'skinpacks')
+
 function withCurrent(options: string[] | null, current: string): string[] {
   const list = options ?? []
   if (current && !list.some(o => o.toLowerCase() === current.toLowerCase())) {
@@ -276,7 +281,10 @@ function withCurrent(options: string[] | null, current: string): string[] {
 
 const buildTypeChoices = computed(() => withCurrent(buildTypeOptions.value, form.build_type))
 const themeChoices = computed(() => withCurrent(themeOptions.value, form.theme))
-const categoryChoices = computed(() => withCurrent(categoryOptions.value, form.category))
+const categoryChoices = computed(() => withCurrent(
+  (isSkinpack.value ? skinpackCategoryOptions.value : categoryOptions.value),
+  form.category,
+))
 
 const editing = ref(false)
 const saving = ref(false)
@@ -285,6 +293,7 @@ const listError = ref('')
 const editingId = ref<number | null>(null)
 const formGeneration = ref(0)
 const SECTIONS = ['builds', 'skinpacks'] as const
+
 
 const form = reactive({
   section: 'builds' as 'builds' | 'skinpacks',
@@ -300,7 +309,6 @@ const form = reactive({
   download_key: null as string | null,
 })
 
-const isSkinpack = computed(() => form.section === 'skinpacks')
 
 const selectedImageFile = ref<File | null>(null)
 const uploadingImage = ref(false)
@@ -491,7 +499,9 @@ function startEdit(item: BrowseItem) {
   form.image_url = item.image_url
   form.section = item.section === 'skinpacks' ? 'skinpacks' : 'builds'
   form.price = String(item.price)
-  form.difficulty = item.difficulty
+  // A skinpack stores no difficulty, so an item moved back to builds would
+  // otherwise land on a blank select and a 400 from the server.
+  form.difficulty = DIFFICULTIES.includes(item.difficulty) ? item.difficulty : 'Easy'
   form.build_type = item.build_type
   form.theme = item.theme
   form.category = item.category
@@ -516,8 +526,8 @@ async function save() {
       image_url: form.image_url,
       price: isSkinpack.value ? 0 : Number(form.price),
       difficulty: isSkinpack.value ? 'Easy' : form.difficulty,
-      build_type: form.build_type,
-      theme: form.theme,
+      build_type: isSkinpack.value ? '' : form.build_type,
+      theme: isSkinpack.value ? '' : form.theme,
       category: form.category,
       released: form.released,
       description: form.description,

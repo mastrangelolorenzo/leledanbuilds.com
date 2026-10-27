@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const inUse = await db
-    .prepare(`SELECT COUNT(*) AS n FROM browse_items WHERE ${taxonomy.itemColumn} = ? COLLATE NOCASE`)
+    .prepare(`SELECT COUNT(*) AS n FROM browse_items WHERE section = '${taxonomy.section}' AND ${taxonomy.itemColumn} = ? COLLATE NOCASE`)
     .bind(term.name)
     .first<{ n: number }>()
 
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
   if (count > 0) {
     throw createError({
       statusCode: 409,
-      statusMessage: `"${term.name}" is used by ${count} build${count === 1 ? '' : 's'}. Change those first.`,
+      statusMessage: `"${term.name}" is used by ${count} item${count === 1 ? '' : 's'}. Change those first.`,
     })
   }
 

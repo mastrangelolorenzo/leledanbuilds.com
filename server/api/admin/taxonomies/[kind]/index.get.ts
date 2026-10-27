@@ -10,9 +10,9 @@ import { resolveTaxonomy } from '../../../../utils/taxonomy'
 export default defineEventHandler(async (event) => {
   await requireAdmin(event)
 
-  // table/itemColumn come from the allow-list in utils/taxonomy, never from
-  // the URL: both are interpolated into SQL below because SQLite cannot
-  // parameterise an identifier.
+  // table/itemColumn/section come from the allow-list in utils/taxonomy,
+  // never from the URL: all three are interpolated into SQL below because
+  // SQLite cannot parameterise an identifier.
   const taxonomy = resolveTaxonomy(getRouterParam(event, 'kind'))
   if (!taxonomy) {
     throw createError({ statusCode: 404, statusMessage: 'Unknown taxonomy.' })
@@ -30,7 +30,12 @@ export default defineEventHandler(async (event) => {
     .prepare(`
       SELECT t.id, t.name, t.sort_order, COUNT(b.id) AS usage_count
       FROM ${taxonomy.table} t
-      LEFT JOIN browse_items b ON b.${taxonomy.itemColumn} = t.name COLLATE NOCASE
+      -- Scoped to the term's own catalogue: builds and skinpacks both store
+      -- their category in the same column, so without this a skin pack
+      -- would count towards a build category of the same name.
+      LEFT JOIN browse_items b
+        ON b.${taxonomy.itemColumn} = t.name COLLATE NOCASE
+        AND b.section = '${taxonomy.section}'
       GROUP BY t.id, t.name, t.sort_order
       -- sort_order is the operator's drag order (migration 0017); name is
       -- only the tie-break, so two terms that somehow share a position still
@@ -47,7 +52,8 @@ export default defineEventHandler(async (event) => {
     .prepare(`
       SELECT DISTINCT b.${taxonomy.itemColumn} AS name, COUNT(*) AS usage_count
       FROM browse_items b
-      WHERE b.${taxonomy.itemColumn} IS NOT NULL
+      WHERE b.section = '${taxonomy.section}'
+        AND b.${taxonomy.itemColumn} IS NOT NULL
         AND b.${taxonomy.itemColumn} != ''
         AND NOT EXISTS (
           SELECT 1 FROM ${taxonomy.table} t WHERE t.name = b.${taxonomy.itemColumn} COLLATE NOCASE

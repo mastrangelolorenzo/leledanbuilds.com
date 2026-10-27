@@ -1,7 +1,7 @@
 // server/api/taxonomies.get.ts
 //
-// Public, unauthenticated: the ordered term lists the /browse filters are
-// built from.
+// Public, unauthenticated: the ordered term lists the /browse and
+// /skinpacks filters are built from.
 //
 // Separate from /api/admin/taxonomies/* because that requires an admin
 // session and returns usage counts and orphans -- operational detail that
@@ -16,10 +16,11 @@ export default defineEventHandler(async (event) => {
 
   // One batch rather than three awaits: this runs on every browse page load
   // and three sequential round trips are noticeable on a cold Worker.
-  const [buildTypes, themes, categories] = await db.batch([
+  const [buildTypes, themes, categories, skinpackCategories] = await db.batch([
     db.prepare('SELECT name FROM build_types ORDER BY sort_order ASC, name COLLATE NOCASE ASC'),
     db.prepare('SELECT name FROM themes ORDER BY sort_order ASC, name COLLATE NOCASE ASC'),
     db.prepare('SELECT name FROM categories ORDER BY sort_order ASC, name COLLATE NOCASE ASC'),
+    db.prepare('SELECT name FROM skinpack_categories ORDER BY sort_order ASC, name COLLATE NOCASE ASC'),
   ])
 
   const names = (r: unknown): string[] =>
@@ -31,5 +32,8 @@ export default defineEventHandler(async (event) => {
     build_types: names(buildTypes),
     themes: names(themes),
     categories: names(categories),
+    // The /skinpacks filter is built from these, never from `categories`:
+    // the builds terms describe builds.
+    skinpack_categories: names(skinpackCategories),
   }
 })

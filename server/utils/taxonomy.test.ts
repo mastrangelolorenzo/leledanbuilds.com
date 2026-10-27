@@ -7,6 +7,7 @@ import {
   TAXONOMIES,
   MAX_TERM_LENGTH,
 } from './taxonomy'
+import { BROWSE_SECTIONS } from './postValidation'
 
 function fakeDb(existing: string | null) {
   const calls: { sql: string, args: unknown[] }[] = []
@@ -96,10 +97,11 @@ describe('findTaxonomyTerm', () => {
 })
 
 describe('taxonomy kinds', () => {
-  it('accepts only the three known kinds', () => {
+  it('accepts only the known kinds', () => {
     expect(isTaxonomyKind('categories')).toBe(true)
     expect(isTaxonomyKind('themes')).toBe(true)
     expect(isTaxonomyKind('build-types')).toBe(true)
+    expect(isTaxonomyKind('skinpack-categories')).toBe(true)
     expect(isTaxonomyKind('users')).toBe(false)
     expect(isTaxonomyKind('')).toBe(false)
     expect(isTaxonomyKind(undefined)).toBe(false)
@@ -113,18 +115,31 @@ describe('taxonomy kinds', () => {
     expect(isTaxonomyKind('__proto__')).toBe(false)
   })
 
-  it('resolves to a table and item column, or null', () => {
+  it('resolves to a table, item column and section, or null', () => {
     expect(resolveTaxonomy('categories')).toEqual({
-      table: 'categories', itemColumn: 'category', label: 'Category',
+      table: 'categories', itemColumn: 'category', label: 'Category', section: 'builds',
+    })
+    expect(resolveTaxonomy('skinpack-categories')).toEqual({
+      table: 'skinpack_categories', itemColumn: 'category', label: 'Skinpack category', section: 'skinpacks',
     })
     expect(resolveTaxonomy('nope')).toBeNull()
     expect(resolveTaxonomy('constructor')).toBeNull()
   })
 
-  it('maps every kind to a distinct table and column', () => {
+  it('maps every kind to a distinct table', () => {
     const tables = Object.values(TAXONOMIES).map(t => t.table)
-    const columns = Object.values(TAXONOMIES).map(t => t.itemColumn)
     expect(new Set(tables).size).toBe(tables.length)
-    expect(new Set(columns).size).toBe(columns.length)
+  })
+
+  // Builds and skinpacks both keep their term in browse_items.category, so
+  // the column alone no longer identifies a list -- the pair does, and the
+  // section is what keeps one catalogue's usage counts and delete guards out
+  // of the other's.
+  it('maps every kind to a distinct column-and-section pair', () => {
+    const pairs = Object.values(TAXONOMIES).map(t => `${t.itemColumn}:${t.section}`)
+    expect(new Set(pairs).size).toBe(pairs.length)
+    for (const entry of Object.values(TAXONOMIES)) {
+      expect(BROWSE_SECTIONS).toContain(entry.section)
+    }
   })
 })

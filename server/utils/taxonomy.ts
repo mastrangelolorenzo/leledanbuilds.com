@@ -1,25 +1,34 @@
+import type { BrowseSection } from './postValidation'
+
 interface TaxonomyDb {
   prepare: (sql: string) => {
     bind: (...args: unknown[]) => { first: <T>() => Promise<T | null>, run: () => Promise<unknown> }
   }
 }
 
-const ALLOWED_TABLES = ['build_types', 'themes', 'categories'] as const
+const ALLOWED_TABLES = ['build_types', 'themes', 'categories', 'skinpack_categories'] as const
 export type TaxonomyTable = typeof ALLOWED_TABLES[number]
 
 /**
- * The three taxonomies, keyed by the slug used in the admin URLs.
+ * The managed taxonomies, keyed by the slug used in the admin URLs.
  *
- * `table` and `itemColumn` are looked up from THIS map and never taken from
- * a request: both are interpolated into SQL (SQLite cannot parameterise an
- * identifier), so a request-supplied value would be a straight injection.
- * Everything reaching the database goes through resolveTaxonomy below.
+ * `table`, `itemColumn` and `section` are looked up from THIS map and never
+ * taken from a request: all three are interpolated into SQL (SQLite cannot
+ * parameterise an identifier), so a request-supplied value would be a
+ * straight injection. Everything reaching the database goes through
+ * resolveTaxonomy below.
+ *
+ * `section` is which catalogue the terms belong to. Skinpacks have their own
+ * category list -- the builds terms describe builds -- so two entries share
+ * the `category` column and are told apart by this field alone, which is why
+ * every usage count and delete guard has to filter on it.
  */
 export const TAXONOMIES = {
-  categories: { table: 'categories', itemColumn: 'category', label: 'Category' },
-  themes: { table: 'themes', itemColumn: 'theme', label: 'Theme' },
-  'build-types': { table: 'build_types', itemColumn: 'build_type', label: 'Build type' },
-} as const satisfies Record<string, { table: TaxonomyTable, itemColumn: string, label: string }>
+  categories: { table: 'categories', itemColumn: 'category', label: 'Category', section: 'builds' },
+  themes: { table: 'themes', itemColumn: 'theme', label: 'Theme', section: 'builds' },
+  'build-types': { table: 'build_types', itemColumn: 'build_type', label: 'Build type', section: 'builds' },
+  'skinpack-categories': { table: 'skinpack_categories', itemColumn: 'category', label: 'Skinpack category', section: 'skinpacks' },
+} as const satisfies Record<string, { table: TaxonomyTable, itemColumn: string, label: string, section: BrowseSection }>
 
 export type TaxonomyKind = keyof typeof TAXONOMIES
 

@@ -26,8 +26,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody<UpdateBody>(event)
-  if (!body.title || !body.image_url || !body.build_type || !body.theme || !body.category || !body.released || !body.description || typeof body.price !== 'number') {
-    throw createError({ statusCode: 400, statusMessage: 'title, image_url, price, build_type, theme, category, released and description are required.' })
+  if (!body.title || !body.image_url || !body.category || !body.released || !body.description || typeof body.price !== 'number') {
+    throw createError({ statusCode: 400, statusMessage: 'title, image_url, price, category, released and description are required.' })
   }
   if (!isValidPrice(body.price)) {
     throw createError({ statusCode: 400, statusMessage: 'price must be a non-negative number with at most 2 decimal places.' })
@@ -45,13 +45,28 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: `section must be one of: ${BROWSE_SECTIONS.join(', ')}.` })
   }
 
-  if (!DIFFICULTIES.includes(body.difficulty as typeof DIFFICULTIES[number])) {
-    throw createError({ statusCode: 400, statusMessage: `difficulty must be one of: ${DIFFICULTIES.join(', ')}.` })
-  }
-
   const db = event.context.cloudflare?.env?.DB
   if (!db) {
     throw createError({ statusCode: 503, statusMessage: 'Database unavailable' })
+  }
+
+  // Which fields apply depends on the section the row ENDS UP in, so an edit
+  // that leaves the section alone has to read the row's own.
+  const current = await db
+    .prepare('SELECT section FROM browse_items WHERE id = ?')
+    .bind(id)
+    .first<{ section: string }>()
+  if (!current) {
+    throw createError({ statusCode: 404, statusMessage: 'Not found.' })
+  }
+  const effectiveSection = section ?? (isBrowseSection(current.section) ? current.section : 'builds')
+  const isSkinpack = effectiveSection === 'skinpacks'
+
+  if (!isSkinpack && (!body.build_type || !body.theme)) {
+    throw createError({ statusCode: 400, statusMessage: 'build_type and theme are required.' })
+  }
+  if (!isSkinpack && !DIFFICULTIES.includes(body.difficulty as typeof DIFFICULTIES[number])) {
+    throw createError({ statusCode: 400, statusMessage: `difficulty must be one of: ${DIFFICULTIES.join(', ')}.` })
   }
 
   const slug = slugify(body.title)
@@ -60,13 +75,20 @@ export default defineEventHandler(async (event) => {
   // created. Previously this called ensureTaxonomyTerm, which INSERTED an
   // unknown term -- that is how every typo in the product form became a
   // permanent category. A 400 here is the point, not an inconvenience.
-  const buildType = await findTaxonomyTerm(db, 'build_types', body.build_type)
-  const theme = await findTaxonomyTerm(db, 'themes', body.theme)
-  const category = await findTaxonomyTerm(db, 'categories', body.category)
+  // A skinpack has no build type, theme or difficulty -- "Structures",
+  // "Fantasy" and "Medium" describe builds -- and its categories come from
+  // their own list. build_type and theme are stored empty; difficulty gets
+  // 'Easy' only because the column carries a CHECK that allows nothing else,
+  // and nothing on a skinpack ever reads it.
+  const buildType = isSkinpack ? '' : await findTaxonomyTerm(db, 'build_types', body.build_type)
+  const theme = isSkinpack ? '' : await findTaxonomyTerm(db, 'themes', body.theme)
+  const category = await findTaxonomyTerm(db, isSkinpack ? 'skinpack_categories' : 'categories', body.category)
 
   const unknown = [
-    ['Build type', buildType, body.build_type],
-    ['Theme', theme, body.theme],
+    ...(isSkinpack ? [] : [
+      ['Build type', buildType, body.build_type],
+      ['Theme', theme, body.theme],
+    ]),
     ['Category', category, body.category],
   ].filter(([, resolved]) => !resolved)
 
@@ -85,7 +107,7 @@ export default defineEventHandler(async (event) => {
         `UPDATE browse_items SET slug = ?, title = ?, image_url = ?, price = ?, difficulty = ?, build_type = ?, theme = ?, category = ?, released = ?, description = ?, section = COALESCE(?, section), download_key = CASE WHEN ? THEN ? ELSE download_key END, updated_at = ?
          WHERE id = ?`
       )
-      .bind(slug, body.title, body.image_url, body.price, body.difficulty, buildType, theme, category, body.released, body.description, section, hasDownloadKey ? 1 : 0, body.download_key ?? null, new Date().toISOString(), id)
+      .bind(slug, body.title, body.image_url, body.price, isSkinpack ? 'Easy' : body.difficulty, buildType, theme, category, body.released, body.description, section, hasDownloadKey ? 1 : 0, body.download_key ?? null, new Date().toISOString(), id)
       .run()
 
     if (result.meta.changes === 0) {

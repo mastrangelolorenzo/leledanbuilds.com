@@ -82,7 +82,6 @@
 
                   <div class="flex flex-wrap items-center gap-2 mb-4">
                     <span class="px-2.5 py-1 rounded-full border border-primary/40 text-primary text-[11px] font-semibold uppercase tracking-wide">{{ item.category }}</span>
-                    <span class="px-2.5 py-1 rounded-full border border-white/20 text-text/70 text-[11px] font-semibold uppercase tracking-wide">{{ item.theme }}</span>
                   </div>
 
                   <div class="relative z-10 flex items-center justify-between mt-auto">
@@ -151,7 +150,6 @@ interface BrowseItem {
   title: string
   image_url: string
   price: number
-  theme: string
   category: string
   section: string
   rating_avg: number
@@ -176,14 +174,14 @@ if (!user.value) {
   user.value = me.value ?? null
 }
 
-const { data: taxonomies } = await useFetch<{ categories: string[] }>('/api/taxonomies', { retry: false })
+const { data: taxonomies } = await useFetch<{ skinpack_categories: string[] }>('/api/taxonomies', { retry: false })
 
 // Unlike /browse, only the categories actually used by a skinpack are
 // offered: the builds shop shows its whole structure on purpose, but here an
 // empty category would just be a dead button on a page with few packs.
 const categories = computed(() => {
   const used = new Set(skinpacks.value.map(p => p.category).filter(Boolean))
-  const configured = (taxonomies.value?.categories ?? []).filter(name => used.has(name))
+  const configured = (taxonomies.value?.skinpack_categories ?? []).filter(name => used.has(name))
   const known = new Set(configured.map(n => n.toLowerCase()))
   const extras = [...used].filter(name => !known.has(name.toLowerCase())).sort()
   return [...configured, ...extras]

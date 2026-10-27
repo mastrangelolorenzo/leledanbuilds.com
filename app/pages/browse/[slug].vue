@@ -45,15 +45,17 @@
             </h1>
 
             <div class="flex flex-wrap items-center gap-2 mb-5">
-              <span class="px-3 py-1 rounded-full border border-primary/40 text-primary text-xs font-semibold uppercase tracking-wide">{{ build.build_type }}</span>
-              <span class="px-3 py-1 rounded-full border border-white/20 text-text/70 text-xs font-semibold uppercase tracking-wide">{{ build.theme }}</span>
+              <!-- Build type, theme and difficulty describe builds; a
+                   skinpack carries none of them. -->
+              <span v-if="!isSkinpack" class="px-3 py-1 rounded-full border border-primary/40 text-primary text-xs font-semibold uppercase tracking-wide">{{ build.build_type }}</span>
+              <span v-if="!isSkinpack" class="px-3 py-1 rounded-full border border-white/20 text-text/70 text-xs font-semibold uppercase tracking-wide">{{ build.theme }}</span>
               <span class="px-3 py-1 rounded-full border border-white/20 text-text/70 text-xs font-semibold uppercase tracking-wide">{{ build.category }}</span>
             </div>
 
             <p class="text-text/80 leading-relaxed mb-6">{{ build.description }}</p>
 
             <dl class="grid grid-cols-2 gap-4 mb-8 border-t border-white/10 pt-6">
-              <div>
+              <div v-if="!isSkinpack">
                 <dt class="text-text/40 text-xs uppercase tracking-widest font-bold mb-1">Difficulty</dt>
                 <dd class="flex items-center gap-2">
                   <span class="text-text font-semibold text-sm">{{ build.difficulty }}</span>
@@ -83,7 +85,7 @@
                 <dt class="text-text/40 text-xs uppercase tracking-widest font-bold mb-1">Category</dt>
                 <dd class="text-text font-semibold text-sm">{{ build.category }}</dd>
               </div>
-              <div>
+              <div v-if="!isSkinpack">
                 <dt class="text-text/40 text-xs uppercase tracking-widest font-bold mb-1">Theme</dt>
                 <dd class="text-text font-semibold text-sm">{{ build.theme }}</dd>
               </div>
@@ -205,7 +207,7 @@
               />
               <div class="p-4 flex flex-col flex-1">
                 <h3 class="text-white font-extrabold uppercase text-sm tracking-wide mb-2">{{ item.title }}</h3>
-                <span class="text-primary font-black text-lg mt-auto">€{{ item.price }}</span>
+                <span class="text-primary font-black text-lg mt-auto">{{ item.price > 0 ? `€${item.price}` : 'Free' }}</span>
               </div>
             </NuxtLink>
           </div>
@@ -322,6 +324,9 @@ const relatedBuilds = computed(() => {
     .filter(
       (p) =>
         p.slug !== build.value!.slug &&
+        // Never across catalogues: a skin pack is not a related build, and
+        // a skinpack's empty theme would otherwise match anything.
+        p.section === build.value!.section &&
         (p.category === build.value!.category ||
           p.theme === build.value!.theme ||
           p.build_type === build.value!.build_type)
