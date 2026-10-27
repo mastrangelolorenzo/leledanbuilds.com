@@ -236,7 +236,13 @@ const { data: fetchedProducts } = await useFetch<BrowseItem[]>('/api/browse-item
 // skinpacks (app/pages/skinpacks.vue) are filtered out here rather than by a
 // second request. Rows predating the section column default to 'builds'.
 const products = computed(() =>
-  (fetchedProducts.value ?? []).filter(p => p.section !== 'skinpacks')
+  (fetchedProducts.value ?? [])
+    .filter(p => p.section !== 'skinpacks')
+    // Newest release first. `released` is stored as YYYY-MM-DD, so comparing
+    // the strings compares the dates; id breaks a tie, keeping the order
+    // stable for two builds released the same day. filter() already copied
+    // the array, so this does not reorder the fetched data.
+    .sort((a, b) => b.released.localeCompare(a.released) || b.id - a.id)
 )
 
 // Admin-configurable difficulty dot colours, same source as the detail page
