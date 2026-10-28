@@ -7,7 +7,7 @@
         Skinpacks
       </h2>
       <p class="text-text/70 text-center max-w-xl mt-3 mb-10">
-        Character packs to match the builds — free to download.
+        Character packs to match the builds.
       </p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">

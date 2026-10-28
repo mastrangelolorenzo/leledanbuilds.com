@@ -11,7 +11,7 @@
             Browse <span class="text-primary">Skinpacks</span>
           </h1>
           <p class="text-text/60 mt-2">
-            {{ skinpacks.length }} hand-crafted Minecraft skinpacks — free to browse
+            {{ skinpacks.length }} hand-crafted Minecraft skinpacks
           </p>
         </div>
 
@@ -85,7 +85,7 @@
                   </div>
 
                   <div class="relative z-10 flex items-center justify-between mt-auto">
-                    <span class="text-primary font-black text-xl uppercase">Free</span>
+                    <span class="text-primary font-black text-xl uppercase">{{ item.price > 0 ? `€${item.price}` : 'Free' }}</span>
                     <NuxtLink
                       :to="`/browse/${item.slug}`"
                       class="inline-flex items-center gap-1.5 bg-primary text-black font-bold uppercase text-sm rounded-full px-4 py-2 hover:bg-secondary transition-all duration-300"

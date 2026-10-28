@@ -340,9 +340,9 @@ const relatedBuilds = computed(() => {
 // same rule — this only saves the buyer a pointless click.
 const paypalAvailable = computed(() => !!build.value && meetsPayPalMinimum(build.value.price))
 
-// Skinpacks ship free for now (price 0). The server refuses checkout on a
-// zero-priced row anyway -- this just keeps the page from offering a Buy
-// button that could only fail.
+// Which catalogue the row is in -- it drives the build-only fields and the
+// rating-vs-like choice, never the price: a skinpack can be sold like a
+// build, and only `isFree` below decides whether a Buy button appears.
 const isSkinpack = computed(() => build.value?.section === 'skinpacks')
 
 const isFree = computed(() => !!build.value && !(build.value.price > 0))

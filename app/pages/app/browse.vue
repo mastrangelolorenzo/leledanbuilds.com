@@ -73,7 +73,7 @@
                 </div>
               </div>
             </td>
-            <td class="px-4 text-text/70">{{ item.section === 'skinpacks' ? 'Free' : `€${item.price}` }}</td>
+            <td class="px-4 text-text/70">{{ item.price > 0 ? `€${item.price}` : 'Free' }}</td>
             <td class="px-4 text-text/70">{{ item.section === 'skinpacks' ? '—' : item.difficulty }}</td>
             <td class="px-4">
               <!-- Only skinpacks: the home page's skinpack section is what
@@ -134,11 +134,12 @@
           <UFormField label="Section">
             <USelect v-model="form.section" :items="SECTIONS" placeholder="Section" class="w-full" />
           </UFormField>
-          <!-- A skinpack is free for now and has no difficulty, build type
-               or theme, so those fields are hidden rather than left to be
-               filled with values nothing reads. The save sends 0 and
-               placeholders for them. -->
-          <UFormField v-if="!isSkinpack" label="Price (€)">
+          <!-- A skinpack has no difficulty, build type or theme, so those
+               fields are hidden rather than left to be filled with values
+               nothing reads. The save sends placeholders for them. Price is
+               shared: a skinpack priced above 0 sells through the same
+               checkout as a build, and 0 keeps it free. -->
+          <UFormField label="Price (€)">
             <UInput v-model="form.price" type="number" placeholder="Price" class="w-full" />
           </UFormField>
           <UFormField v-if="!isSkinpack" label="Difficulty">
@@ -550,7 +551,7 @@ async function save() {
       section: form.section,
       title: form.title,
       image_url: form.image_url,
-      price: isSkinpack.value ? 0 : Number(form.price),
+      price: Number(form.price),
       difficulty: isSkinpack.value ? 'Easy' : form.difficulty,
       build_type: isSkinpack.value ? '' : form.build_type,
       theme: isSkinpack.value ? '' : form.theme,

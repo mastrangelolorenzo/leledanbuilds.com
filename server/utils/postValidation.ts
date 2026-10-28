@@ -2,9 +2,10 @@ import { createError } from 'h3'
 import { isValidDeliverableKey } from './deliverableKey'
 
 /**
- * Which catalogue a browse_items row belongs to. Builds are sold; skinpacks
- * are currently free, so the checkout routes refuse any row priced at 0
- * regardless of section -- see server/api/checkout/*.
+ * Which catalogue a browse_items row belongs to. Both are sellable: the
+ * checkout routes refuse any row priced at 0 regardless of section, so a
+ * free item is free because of its price, not its catalogue -- see
+ * server/api/checkout/*.
  */
 export const BROWSE_SECTIONS = ['builds', 'skinpacks'] as const
 export type BrowseSection = typeof BROWSE_SECTIONS[number]
