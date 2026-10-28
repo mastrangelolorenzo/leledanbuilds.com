@@ -31,11 +31,14 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
           <!-- md:order-2 puts the image on the right on desktop; unset on
-               mobile so the single-column layout still shows it first. -->
+               mobile so the single-column layout still shows it first.
+               Skinpack art is 16:9 everywhere it is shown (/skinpacks, the
+               home strip), so a square crop here would cut it. -->
           <img
             :src="build.image_url"
             :alt="build.title"
-            class="w-full aspect-square object-cover rounded-2xl border border-white/10 md:order-2"
+            class="w-full object-cover rounded-2xl border border-white/10 md:order-2"
+            :class="isSkinpack ? 'aspect-video' : 'aspect-square'"
             draggable="false"
           />
 
@@ -202,7 +205,8 @@
               <img
                 :src="item.image_url"
                 :alt="item.title"
-                class="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500"
+                class="w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                :class="isSkinpack ? 'aspect-video' : 'aspect-square'"
                 draggable="false"
               />
               <div class="p-4 flex flex-col flex-1">
