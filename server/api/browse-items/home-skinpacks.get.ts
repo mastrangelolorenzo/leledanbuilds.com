@@ -16,12 +16,12 @@ export default defineEventHandler(async (event) => {
 
   const { results } = await db
     .prepare(
-      `SELECT id, slug, title, image_url, category
+      `SELECT id, title, image_url
        FROM browse_items
        WHERE section = 'skinpacks' AND featured_home = 1
        ORDER BY id ASC`
     )
-    .all<{ id: number, slug: string, title: string, image_url: string, category: string }>()
+    .all<{ id: number, title: string, image_url: string }>()
 
   return results ?? []
 })

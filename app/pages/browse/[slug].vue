@@ -32,8 +32,9 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
           <!-- md:order-2 puts the image on the right on desktop; unset on
                mobile so the single-column layout still shows it first.
-               Skinpack art is 16:9 everywhere it is shown (/skinpacks, the
-               home strip), so a square crop here would cut it. -->
+               Skinpack art is 16:9 everywhere it is shown (the portfolio
+               gallery, the home strip), so a square crop here would cut
+               it. -->
           <img
             :src="build.image_url"
             :alt="build.title"

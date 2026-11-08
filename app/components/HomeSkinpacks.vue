@@ -11,10 +11,12 @@
       </p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full">
+        <!-- Every card goes to the portfolio gallery, not to a product page:
+             skinpacks are not sold here. -->
         <NuxtLink
           v-for="pack in skinpacks"
           :key="pack.id"
-          :to="`/browse/${pack.slug}`"
+          to="/portfolio"
           class="group relative rounded-2xl overflow-hidden border-2 border-primary/40 hover:border-primary transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <img
@@ -34,10 +36,10 @@
       </div>
 
       <NuxtLink
-        to="/skinpacks"
+        to="/portfolio"
         class="inline-flex items-center gap-2 mt-10 text-base font-bold uppercase bg-transparent border-2 border-primary text-primary rounded-xl px-6 py-3 hover:bg-primary hover:text-black transition-all duration-300"
       >
-        Browse All Skinpacks
+        See All Skinpacks
         <UIcon name="i-lucide-arrow-right" class="text-lg" />
       </NuxtLink>
     </div>
@@ -47,10 +49,8 @@
 <script lang="ts" setup>
 interface HomeSkinpack {
   id: number
-  slug: string
   title: string
   image_url: string
-  category: string
 }
 
 // Which packs appear is set per item in /app/browse; the endpoint returns
