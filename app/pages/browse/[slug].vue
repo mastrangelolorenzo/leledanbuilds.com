@@ -119,7 +119,9 @@
                 <ShareButton :title="build.title" size="lg" />
               </div>
 
-            <div class="flex items-center justify-between pt-6 border-t border-white/10">
+            <!-- Skinpacks are portfolio work, not shop stock: no price and no
+                 checkout, whatever the row still carries in `price`. -->
+            <div v-if="!isSkinpack" class="flex items-center justify-between pt-6 border-t border-white/10">
               <span class="text-primary font-black text-4xl">{{ isFree ? 'Free' : `€${build.price}` }}</span>
               <span
                 v-if="isFree"
@@ -211,7 +213,7 @@
               />
               <div class="p-4 flex flex-col flex-1">
                 <h3 class="text-white font-extrabold uppercase text-sm tracking-wide mb-2">{{ item.title }}</h3>
-                <span class="text-primary font-black text-lg mt-auto">{{ item.price > 0 ? `€${item.price}` : 'Free' }}</span>
+                <span v-if="!isSkinpack" class="text-primary font-black text-lg mt-auto">{{ item.price > 0 ? `€${item.price}` : 'Free' }}</span>
               </div>
             </NuxtLink>
           </div>

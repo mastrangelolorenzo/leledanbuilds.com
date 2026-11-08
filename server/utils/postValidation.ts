@@ -2,10 +2,9 @@ import { createError } from 'h3'
 import { isValidDeliverableKey } from './deliverableKey'
 
 /**
- * Which catalogue a browse_items row belongs to. Both are sellable: the
- * checkout routes refuse any row priced at 0 regardless of section, so a
- * free item is free because of its price, not its catalogue -- see
- * server/api/checkout/*.
+ * Which catalogue a browse_items row belongs to. Builds are sold; skinpacks
+ * are portfolio work only -- see `isSellable` below, which both checkout
+ * routes gate on.
  */
 export const BROWSE_SECTIONS = ['builds', 'skinpacks'] as const
 export type BrowseSection = typeof BROWSE_SECTIONS[number]
@@ -63,6 +62,18 @@ export async function assertFeatureLimit(
       statusMessage: `At most ${limit} posts can be featured on "${list}". Un-feature one first.`,
     })
   }
+}
+
+/**
+ * Whether a browse_items row may be bought. Two reasons it may not:
+ * a zero price would reach a payment provider that rejects a zero amount,
+ * so the buyer would get a bare provider error instead of an answer; and
+ * skinpacks are portfolio work, never shop stock, whatever price their row
+ * still carries from when they were briefly sellable. Both checkout routes
+ * gate on this -- the hidden Buy button is not the guard.
+ */
+export function isSellable(item: { price: number, section: string }): boolean {
+  return item.price > 0 && item.section !== 'skinpacks'
 }
 
 export function isUniqueConstraintError(err: unknown): boolean {

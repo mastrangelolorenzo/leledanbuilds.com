@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { slugify, assertFeatureLimit, isUniqueConstraintError, isValidPrice, isValidDownloadKey, isBrowseSection } from './postValidation'
+import { slugify, assertFeatureLimit, isUniqueConstraintError, isValidPrice, isValidDownloadKey, isBrowseSection, isSellable } from './postValidation'
 
 describe('slugify', () => {
   it('lowercases, strips punctuation and hyphenates spaces', () => {
@@ -159,5 +159,23 @@ describe('isBrowseSection', () => {
     expect(isBrowseSection('')).toBe(false)
     expect(isBrowseSection(undefined)).toBe(false)
     expect(isBrowseSection(null)).toBe(false)
+  })
+})
+
+describe('isSellable', () => {
+  it('accepts a priced build', () => {
+    expect(isSellable({ price: 7, section: 'builds' })).toBe(true)
+  })
+
+  // Both providers reject a zero amount, so the buyer would get a bare
+  // provider error instead of "not for sale".
+  it('rejects a build priced at 0', () => {
+    expect(isSellable({ price: 0, section: 'builds' })).toBe(false)
+  })
+
+  // The rows created while skinpacks were briefly sellable still carry a
+  // price, so the section has to be refused on its own.
+  it('rejects a skinpack even when its row still carries a price', () => {
+    expect(isSellable({ price: 7, section: 'skinpacks' })).toBe(false)
   })
 })

@@ -2,6 +2,7 @@ import { requireAuth } from '../../utils/requireAuth'
 import { createPayPalOrder, getPayPalAccessToken } from '../../lib/paypal'
 import { getPublicOrigin } from '../../utils/env'
 import { PAYPAL_MINIMUM_EUROS, meetsPayPalMinimum } from '#shared/payments'
+import { isSellable } from '../../utils/postValidation'
 
 interface Body {
   browse_item_id: number
@@ -12,6 +13,7 @@ interface ItemRow {
   slug: string
   title: string
   price: number
+  section: string
   download_key: string | null
 }
 
@@ -39,7 +41,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const item = await db
-    .prepare('SELECT id, slug, title, price, download_key FROM browse_items WHERE id = ?')
+    .prepare('SELECT id, slug, title, price, section, download_key FROM browse_items WHERE id = ?')
     .bind(body.browse_item_id)
     .first<ItemRow>()
 
@@ -70,12 +72,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Skinpacks are free for now, and a free row must never reach a payment
-  // provider: both Stripe and PayPal reject a zero amount, so the buyer
-  // would get a bare provider error instead of an answer. Priced at 0 is
-  // the condition rather than the section, so this keeps holding the day a
-  // build is given away too.
-  if (!(item.price > 0)) {
+  if (!isSellable(item)) {
     throw createError({ statusCode: 409, statusMessage: 'This item is not for sale.' })
   }
 
