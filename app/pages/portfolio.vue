@@ -39,43 +39,7 @@
       </div>
     </section>
 
-    <!-- Skinpacks: same gallery treatment as the builds above -- a skinpack
-         is portfolio work, it is not sold here. -->
-    <section class="max-w-6xl mx-auto px-4 pb-16">
-      <h2 class="text-2xl md:text-3xl font-extrabold uppercase tracking-wide text-center mb-2 gold-glow">Skinpacks</h2>
-      <p class="text-text/70 text-center max-w-2xl mx-auto mb-10">
-        Character packs built to live alongside the builds.
-      </p>
-
-      <p v-if="!skinpacks?.length" class="text-text/50 text-center py-8">
-        No skinpacks here yet — check back soon.
-      </p>
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <button
-          v-for="pack in skinpacks ?? []"
-          :key="pack.id"
-          class="group relative text-left cursor-pointer rounded-2xl overflow-hidden border-2 border-primary/40 hover:border-primary transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          @click="openItem = pack"
-        >
-          <img
-            :src="pack.image_url"
-            :alt="pack.title"
-            class="w-full aspect-video object-cover group-hover:scale-105 transition-transform duration-500"
-            draggable="false"
-          />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-          <div class="absolute bottom-0 left-0 right-0 p-5">
-            <h3 class="text-white font-extrabold uppercase text-lg tracking-wide">{{ pack.title }}</h3>
-            <p class="text-white/70 text-sm mt-1 line-clamp-2">{{ pack.description }}</p>
-            <span class="text-secondary text-xs font-semibold uppercase inline-flex items-center gap-1 mt-2">
-              View Pack <UIcon name="i-lucide-arrow-right" class="text-xs" />
-            </span>
-          </div>
-        </button>
-      </div>
-    </section>
-
-    <!-- Detail modal, shared by both galleries -->
+    <!-- Build detail modal -->
     <div
       v-if="openItem"
       class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
@@ -111,17 +75,6 @@ interface Build {
   description: string
 }
 
-interface Skinpack {
-  id: number
-  title: string
-  image_url: string
-  description: string
-}
-
 const { data: signatureBuilds } = await useFetch<Build[]>('/api/posts/portfolio')
-const { data: skinpacks } = await useFetch<Skinpack[]>('/api/browse-items/skinpacks')
-
-// Both galleries open the same modal: a title, a picture and a description
-// is all either of them shows.
-const openItem = ref<Build | Skinpack | null>(null)
+const openItem = ref<Build | null>(null)
 </script>

@@ -1,6 +1,6 @@
 // server/api/browse-items/skinpacks.get.ts
 //
-// Every skinpack, for the portfolio gallery on /portfolio. Public and
+// Every skinpack, for the portfolio gallery on /skinpacks. Public and
 // unauthenticated. Deliberately NOT /api/browse-items, which returns the
 // whole shop catalogue with its prices and download keys: the portfolio
 // needs four columns, and the Worker is close to its CPU limit.

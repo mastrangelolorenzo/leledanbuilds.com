@@ -233,7 +233,7 @@ const route = useRoute();
 
 const { data: fetchedProducts } = await useFetch<BrowseItem[]>('/api/browse-items')
 // One endpoint serves both catalogues; this page is the builds shop, so the
-// skinpacks -- portfolio work, shown on /portfolio -- are filtered out here
+// skinpacks -- portfolio work, shown on /skinpacks -- are filtered out here
 // rather than by a second request. Rows predating the section column default
 // to 'builds'.
 const products = computed(() =>

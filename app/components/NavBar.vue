@@ -44,6 +44,12 @@
               >
                 Builds Portfolio
               </NuxtLink>
+              <NuxtLink
+                to="/skinpacks"
+                class="px-5 py-3 text-sm text-text hover:bg-primary/10 hover:text-primary transition-colors whitespace-nowrap"
+              >
+                Skinpacks Portfolio
+              </NuxtLink>
             </div>
           </div>
         </div>
@@ -108,6 +114,13 @@
               @click="mobileOpen = false"
             >
               Builds Portfolio
+            </NuxtLink>
+            <NuxtLink
+              to="/skinpacks"
+              class="w-full text-lg text-text font-bold py-2 px-2 rounded hover:bg-primary/10 hover:text-primary transition"
+              @click="mobileOpen = false"
+            >
+              Skinpacks Portfolio
             </NuxtLink>
           </div>
           <div
