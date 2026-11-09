@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
   // capability, so using it from the URL is fine as long as it's always
   // paired with the server-derived userId in this same WHERE clause. Only a
   // 'completed' order (real settlement/capture evidence, per Stripe's and
-  // PayPal's webhook handlers) grants access -- 'pending' and 'failed' both
+  // webhook handler) grants access -- 'pending' and 'failed' both
   // fall through to the 403 below.
   const order = await db
     .prepare(`SELECT id FROM orders WHERE user_id = ? AND browse_item_id = ? AND status = 'completed' LIMIT 1`)

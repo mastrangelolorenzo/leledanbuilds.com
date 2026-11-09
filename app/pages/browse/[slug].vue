@@ -162,30 +162,14 @@
                 Coming soon
               </span>
               <div v-else class="flex flex-col items-end gap-2">
-                <div class="flex items-center gap-3">
-                  <UButton
-                    class="rounded-full px-6 py-3 font-bold uppercase text-sm"
-                    :loading="checkoutLoading === 'stripe'"
-                    :disabled="!!checkoutLoading"
-                    @click="startCheckout('stripe')"
-                  >
-                    Buy with card
-                  </UButton>
-                  <UButton
-                    v-if="paypalAvailable"
-                    class="rounded-full px-6 py-3 font-bold uppercase text-sm"
-                    :loading="checkoutLoading === 'paypal'"
-                    :disabled="!!checkoutLoading"
-                    color="neutral"
-                    variant="outline"
-                    @click="startCheckout('paypal')"
-                  >
-                    Buy with PayPal
-                  </UButton>
-                </div>
-                <p v-if="!paypalAvailable" class="text-text/50 text-xs">
-                  PayPal is available on orders of €{{ PAYPAL_MINIMUM_EUROS }} or more.
-                </p>
+                <UButton
+                  class="rounded-full px-6 py-3 font-bold uppercase text-sm"
+                  :loading="checkoutLoading"
+                  :disabled="checkoutLoading"
+                  @click="startCheckout()"
+                >
+                  Buy with card
+                </UButton>
                 <p v-if="checkoutError" class="text-red-400 text-xs">{{ checkoutError }}</p>
               </div>
             </div>
@@ -233,7 +217,6 @@
 import { computed, ref } from "vue";
 import { useRoute } from "#app";
 import { isValidHexColor } from "../../../server/utils/difficultyColors";
-import { PAYPAL_MINIMUM_EUROS, meetsPayPalMinimum } from "#shared/payments";
 
 interface BrowseItem {
   id: number
@@ -341,12 +324,6 @@ const relatedBuilds = computed(() => {
     .slice(0, 4);
 });
 
-// PayPal's fixed per-transaction fee makes cheap builds not worth selling
-// through it, so the button is hidden below the minimum rather than shown
-// and then rejected by the server. POST /api/checkout/paypal enforces the
-// same rule — this only saves the buyer a pointless click.
-const paypalAvailable = computed(() => !!build.value && meetsPayPalMinimum(build.value.price))
-
 // Which catalogue the row is in -- it drives the build-only fields and the
 // rating-vs-like choice, never the price: a skinpack can be sold like a
 // build, and only `isFree` below decides whether a Buy button appears.
@@ -354,35 +331,35 @@ const isSkinpack = computed(() => build.value?.section === 'skinpacks')
 
 const isFree = computed(() => !!build.value && !(build.value.price > 0))
 
-const checkoutLoading = ref<'stripe' | 'paypal' | null>(null)
+const checkoutLoading = ref(false)
 const checkoutError = ref('')
 
-async function startCheckout(provider: 'stripe' | 'paypal') {
+async function startCheckout() {
   if (!build.value) return
   // Double-submit protection currently also holds because Nuxt UI's button
   // re-checks `disabled` at click time, but that invariant belongs to this
   // function, not to a third-party component's internals.
   if (checkoutLoading.value) return
-  checkoutLoading.value = provider
+  checkoutLoading.value = true
   checkoutError.value = ''
   try {
-    const res = await $fetch<{ url: string }>(`/api/checkout/${provider}`, {
+    const res = await $fetch<{ url: string }>('/api/checkout/stripe', {
       method: 'POST',
       body: { browse_item_id: build.value.id },
     })
     // A 200 whose body lacks a usable url must not silently coerce to the
     // string "undefined" and navigate there -- require an absolute https
-    // URL (both providers always return one), which also means a tampered
+    // URL (Stripe always returns one), which also means a tampered
     // or malformed response can never hand this a javascript:/data: URL.
     if (typeof res?.url !== 'string' || !res.url.startsWith('https://')) {
       checkoutError.value = 'Checkout failed. Please try again.'
-      checkoutLoading.value = null
+      checkoutLoading.value = false
       return
     }
     window.location.href = res.url
   } catch (e: unknown) {
     checkoutError.value = (e as { data?: { statusMessage?: string } }).data?.statusMessage ?? 'Checkout failed. Please try again.'
-    checkoutLoading.value = null
+    checkoutLoading.value = false
   }
 }
 </script>

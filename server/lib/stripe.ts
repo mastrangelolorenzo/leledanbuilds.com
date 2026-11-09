@@ -38,7 +38,7 @@ export async function createStripeCheckoutSession(
     // Never log the raw upstream body -- it can carry customer-identifying
     // data from what we sent (e.g. the product title). Status plus, if
     // cheaply parseable, Stripe's own error code/type is enough to diagnose
-    // from logs without that risk (matches the PayPal lib's status-only logging).
+    // from logs without that risk.
     let errorCode: string | undefined
     try {
       const errBody = await res.json() as { error?: { code?: string, type?: string } }

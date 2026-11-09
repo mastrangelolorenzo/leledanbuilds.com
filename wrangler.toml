@@ -11,22 +11,11 @@ main = ".output/server/index.mjs"
 # During local development .dev.vars takes precedence over these, so the
 # production PUBLIC_ORIGIN below does not leak into a local run.
 [vars]
-# Used to build the Stripe/PayPal return URLs. Set explicitly rather than
+# Used to build the Stripe return URLs. Set explicitly rather than
 # left to be derived from the request's Host header, which is attacker-
 # controllable in principle -- a spoofed Host would send a paying customer
 # somewhere else on return.
 PUBLIC_ORIGIN = "https://leledanbuilds.com"
-
-# PayPal environment. Swap to https://api-m.paypal.com when moving off
-# sandbox -- the client id/secret must be swapped in the same breath, since
-# sandbox credentials are rejected by the live host and vice versa.
-PAYPAL_API_BASE = "https://api-m.sandbox.paypal.com"
-
-# PAYPAL_WEBHOOK_ID is deliberately NOT here. It grants nothing on its own --
-# verification also needs PAYPAL_CLIENT_ID/SECRET -- but this repository is
-# public, and publishing the exact webhook subscription an attacker would
-# probe buys us nothing. Set it as a Worker variable in the dashboard
-# alongside the secrets instead.
 
 # Nuxt generates .output/, which is gitignored, so it does not exist in a
 # fresh clone. Without this, Cloudflare's deploy step runs `wrangler deploy`

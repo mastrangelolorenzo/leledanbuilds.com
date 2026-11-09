@@ -62,7 +62,7 @@
           <li>
             <h2 class="font-bold text-primary mb-2 text-xl">7. Payment</h2>
             <ul class="space-y-1 list-disc list-inside">
-              <li>Accepted payment methods: <span class="font-mono">PayPal</span> or bank transfer.</li>
+              <li>Accepted payment methods: <span class="font-mono">credit or debit card</span> (processed by Stripe) or bank transfer.</li>
               <li>Payment is only made after the draft has been approved.</li>
               <li>Orders unpaid 48 hours after the invoice is sent may be cancelled.</li>
               <li>Prices are set in EUR and may vary depending on complexity and deadlines.</li>

@@ -15,8 +15,7 @@
  * comment in migration 0012).
  *
  * Returns false for a missing or non-numeric amount rather than treating it
- * as a pass: an unreadable amount is a mismatch, never a free pass. Same
- * stance as the PayPal side.
+ * as a pass: an unreadable amount is a mismatch, never a free pass.
  */
 export function stripeChargeMatchesOrder(
   sessionAmountTotal: unknown,

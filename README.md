@@ -277,21 +277,21 @@ create a duplicate/garbage value. Creating a genuinely new value is still
 possible — it's a deliberate action in the dashboard's select field, not an
 accident.
 
-### Purchases (Stripe + PayPal)
+### Purchases (Stripe)
 
 Logged-in users (login required) can buy a `/browse` item once the admin has
 attached a downloadable file to it (`/app/browse`'s "Downloadable file"
 field — stored in R2 under `deliverables/`, key kept in
 `browse_items.download_key`, never exposed to non-admin API responses).
-Checkout uses Stripe's hosted Checkout Session and PayPal's Orders v2
-redirect flow — no card data ever touches this app. Both providers confirm
-payment through a signature-verified webhook
-(`server/api/webhooks/stripe.post.ts`, `server/api/webhooks/paypal.post.ts`);
-PayPal additionally captures on the buyer's return
-(`server/api/checkout/paypal-return.get.ts`), since its redirect-only flow
-needs an explicit capture call before the webhook arrives. Every payment
-attempt is one row in the `orders` table; a row only becomes `completed`
-once a provider confirms the money moved.
+Checkout uses Stripe's hosted Checkout Session — no card data ever touches
+this app — and payment is confirmed through a signature-verified webhook
+(`server/api/webhooks/stripe.post.ts`). Every payment attempt is one row in
+the `orders` table; a row only becomes `completed` once Stripe confirms the
+money moved.
+
+Stripe is the only payment provider. PayPal was removed, but `orders.provider`
+still allows `'paypal'` and the rows paid through it stay `completed`, so
+those buyers keep their downloads.
 
 Purchased files are served only through
 `GET /api/downloads/:browseItemId`, which checks the requester has a
@@ -301,17 +301,14 @@ sent to any client. Logged-in users see their completed purchases with a
 Download button at `/app/purchases` (linked from the dashboard sidebar for
 every logged-in user, not just admins).
 
-Requires `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYPAL_CLIENT_ID`,
-`PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`, `PAYPAL_API_BASE` as env vars /
+Requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as env vars /
 Cloudflare secrets — see `.dev.vars.example`. Local webhook delivery needs a
-tunnel, since Stripe/PayPal call the webhook URL from their own servers:
-use the Stripe CLI (`stripe listen --forward-to <local-url>/api/webhooks/stripe`)
-for Stripe, and a tunnel (ngrok/cloudflared) plus PayPal's sandbox webhook
-simulator for PayPal.
+tunnel, since Stripe calls the webhook URL from its own servers: use the
+Stripe CLI (`stripe listen --forward-to <local-url>/api/webhooks/stripe`).
 
 `PUBLIC_ORIGIN` (see "Email verification" below for its general purpose) is
-**required in production** for payments specifically: it determines both
-Stripe's success/cancel URLs and PayPal's return URL. Leaving it unset in
+**required in production** for payments specifically: it determines
+Stripe's success/cancel URLs. Leaving it unset in
 production would let those redirect URLs be influenced by a client-supplied
 `Host` header — it's optional only for local dev, where it falls back to
 the request's own origin.
@@ -320,17 +317,15 @@ the request's own origin.
 
 There is currently no admin UI for this — an order can be legitimately
 stuck `pending` (buyer abandoned checkout, chose a delayed payment method
-and hasn't settled yet) or stuck due to a bug (a mismatch the webhook/return
-route refuses to resolve). To find candidates for manual investigation:
+and hasn't settled yet) or stuck due to a bug (a mismatch the webhook
+refuses to resolve). To find candidates for manual investigation:
 
 ```sql
 SELECT * FROM orders WHERE status = 'pending' AND created_at < datetime('now','-1 hour');
 ```
 
-Alert on these log markers, all of which indicate a payment that will never
-complete on its own: `[stripe-webhook] amount mismatch`, any `[paypal-webhook]`
-line starting with "give up", and any `[paypal-return]` line mentioning
-"mismatch".
+Alert on `[stripe-webhook] amount mismatch`, which indicates a payment that
+will never complete on its own.
 
 Refunds and chargebacks do **not** currently revoke download access — an
 order marked `completed` stays `completed`, and its buyer keeps their

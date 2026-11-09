@@ -27,7 +27,7 @@
           <div>
             <h2 class="font-bold text-primary mb-2 text-xl">3. Payments</h2>
             <p>
-              Payments are processed directly through PayPal or bank transfer. Card or bank details are handled entirely by those providers &mdash; this website does not collect, process or store any payment information.
+              Payments are processed directly through Stripe or bank transfer. Card or bank details are handled entirely by those providers &mdash; this website does not collect, process or store any payment information.
             </p>
           </div>
           <div>

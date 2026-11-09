@@ -82,8 +82,8 @@ export function isUniqueConstraintError(err: unknown): boolean {
 
 /**
  * Accepts a non-negative, finite price with at most 2 decimal places (i.e.
- * a whole number of cents). This guards the root cause of the PayPal C1
- * bug: browse_items.price is quoted to PayPal and verified against a paid
+ * a whole number of cents). This guards the root cause of the C1 bug:
+ * browse_items.price is quoted to Stripe and verified against a paid
  * capture using two different roundings, which disagree by a cent for any
  * price of the form x.xx5 -- rejecting a 3rd decimal place at the source
  * closes that gap for every future price, not just the one bug site.

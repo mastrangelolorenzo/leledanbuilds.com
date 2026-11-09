@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   // never select browse_items.download_key (the R2 object key). That column
   // is only ever read server-side by the gated download endpoint; it never
   // travels in a response body. Only 'completed' orders are real purchases
-  // (Stripe/PayPal both gate completion on real settlement/capture
+  // (Stripe gates completion on real settlement
   // evidence), so 'pending'/'failed' rows are excluded here too.
   // created_at ties break on id DESC so same-timestamp inserts still land
   // newest-first deterministically.

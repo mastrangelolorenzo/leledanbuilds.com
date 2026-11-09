@@ -104,13 +104,12 @@
 
 <script lang="ts" setup>
   // Card brands are handled by Stripe Checkout; Klarna is enabled on the
-  // account too. PayPal is listed because the integration ships with the
-  // site — it only goes live once its credentials are configured.
+  // account too. Stripe is the only provider: nothing else is listed.
   //
   // Real full-colour brand badges (public/payment/*.svg) rather than the
-  // monochrome icon set: those take currentColor, so Visa (#1A1F71) and
-  // PayPal (#003087) came out as near-black navy that all but vanished
-  // against this dark background.
+  // monochrome icon set: those take currentColor, so Visa (#1A1F71) came
+  // out as near-black navy that all but vanished against this dark
+  // background.
   //
   // The four card/wallet badges are the MIT-licensed flat-rounded set from
   // aaronfagan/svg-credit-card-payment-icons, vendored into public/ rather
@@ -125,7 +124,6 @@
     { name: 'Visa', src: '/payment/visa.svg' },
     { name: 'Mastercard', src: '/payment/mastercard.svg' },
     { name: 'American Express', src: '/payment/amex.svg' },
-    { name: 'PayPal', src: '/payment/paypal.svg' },
     { name: 'Klarna', src: '/payment/klarna.svg' },
   ]
 

@@ -62,7 +62,7 @@ describe('isValidPrice', () => {
     expect(isValidPrice(120)).toBe(true)
   })
 
-  it('rejects a 3-decimal price (the exact shape that caused the PayPal C1 bug)', () => {
+  it('rejects a 3-decimal price (the exact shape that caused the C1 bug)', () => {
     expect(isValidPrice(39.955)).toBe(false)
   })
 

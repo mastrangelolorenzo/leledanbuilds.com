@@ -20,6 +20,8 @@
             <h2 class="font-bold text-text">{{ order.title }}</h2>
             <span class="text-primary font-black text-sm shrink-0 pt-0.5">{{ formatPrice(order) }}</span>
           </div>
+          <!-- PayPal is gone from checkout, but orders paid with it before it
+               was removed are still here and still downloadable. -->
           <p class="text-text/40 text-xs mb-4">
             Purchased {{ new Date(order.created_at).toLocaleDateString() }} via {{ order.provider === 'stripe' ? 'card' : 'PayPal' }}
           </p>
