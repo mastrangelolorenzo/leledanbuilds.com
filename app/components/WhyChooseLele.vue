@@ -14,7 +14,7 @@
           <img
             :src="reason.image"
             :alt="reason.title"
-            class="absolute inset-0 w-full h-full object-contain object-bottom scale-125 origin-bottom transition-transform duration-500 group-hover:scale-150"
+            class="absolute inset-0 w-full h-full object-contain object-bottom scale-150 origin-bottom transition-transform duration-500 group-hover:scale-[1.75]"
             draggable="false"
           />
           <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
