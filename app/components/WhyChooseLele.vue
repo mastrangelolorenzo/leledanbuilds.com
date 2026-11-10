@@ -33,17 +33,17 @@ const reasons = [
   {
     image: "/images/why-choose-3.webp",
     title: "Craftmanship",
-    description: "Each build is crafted with meticulous attention to detail, combining technical expertise with artistic vision to deliver truly premium results.",
-  },
-  {
-    image: "/images/why-choose-2.webp",
-    title: "Innovation",
-    description: "Constantly pushing the limits of what's possible in Minecraft, exploring new techniques and creative solutions that redefine what building can be.",
+    description: "Each project is developed with maximum dedication and stylistic care. I focus on clean texturing, unique shading, and sharp details to give every asset a premium look.",
   },
   {
     image: "/images/why-choose-1.webp",
     title: "Efficiency",
-    description: "Years of experience, mastery of tools, and a vast library of assets ensure fast, reliable delivery, without ever compromising on quality.",
+    description: "Quality meets reliability. Thanks to a structured workflow and a solid asset library, I ensure fast updates, optimized files, and ready-to-use content without ever dropping the standard.",
+  },
+  {
+    image: "/images/why-choose-2.webp",
+    title: "Innovation",
+    description: "Breaking the limits of standard styling. I constantly explore original concepts, fresh color palettes, and unique themes that make your characters and worlds stand out from the crowd.",
   },
 ];
 </script>
