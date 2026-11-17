@@ -9,6 +9,7 @@
 
 import { requireAdmin } from '../../../../utils/requireAdmin'
 import { resolveTaxonomy, normalizeTermName, MAX_TERM_LENGTH } from '../../../../utils/taxonomy'
+import { parseTags, serializeTags } from '../../../../utils/browseTags'
 
 export default defineEventHandler(async (event) => {
   await requireAdmin(event)
@@ -62,19 +63,45 @@ export default defineEventHandler(async (event) => {
     return { id, name: newName, products_updated: 0 }
   }
 
-  // batch() so the two writes land together: a rename that updated the term
-  // but not the products (or the reverse) is exactly the inconsistency this
+  // The column holds a JSON list (migration 0023), so the rename has to
+  // replace ONE element of each list and leave the others alone -- a plain
+  // UPDATE ... SET col = ? would overwrite every other tag on the product.
+  // The rows are read first and rewritten here rather than in SQL, which has
+  // no clean way to swap a value inside a JSON array.
+  const { results: affected } = await db
+    .prepare(`
+      SELECT b.id, b.${taxonomy.itemColumn} AS tags FROM browse_items b
+      WHERE b.section = '${taxonomy.section}'
+        AND EXISTS (
+          SELECT 1 FROM json_each(b.${taxonomy.itemColumn}) je
+          WHERE je.value = ? COLLATE NOCASE
+        )
+    `)
+    .bind(current.name)
+    .all<{ id: number, tags: string }>()
+
+  const lowered = current.name.toLowerCase()
+  const rewrites = (affected ?? []).map((row) => {
+    const renamed = parseTags(row.tags).map((tag) => (tag.toLowerCase() === lowered ? newName : tag))
+    // A product already carrying the destination name would end up with it
+    // twice, so collapse duplicates while the list is in hand.
+    const deduped = renamed.filter((tag, i) => renamed.indexOf(tag) === i)
+    return db
+      .prepare(`UPDATE browse_items SET ${taxonomy.itemColumn} = ? WHERE id = ?`)
+      .bind(serializeTags(deduped), row.id)
+  })
+
+  // batch() so the writes land together: a rename that updated the term but
+  // not the products (or the reverse) is exactly the inconsistency this
   // endpoint exists to avoid.
-  const [, itemsResult] = await db.batch([
+  await db.batch([
     db.prepare(`UPDATE ${taxonomy.table} SET name = ? WHERE id = ?`).bind(newName, id),
-    db
-      .prepare(`UPDATE browse_items SET ${taxonomy.itemColumn} = ? WHERE ${taxonomy.itemColumn} = ? COLLATE NOCASE`)
-      .bind(newName, current.name),
+    ...rewrites,
   ])
 
   return {
     id,
     name: newName,
-    products_updated: (itemsResult as { meta?: { changes?: number } })?.meta?.changes ?? 0,
+    products_updated: rewrites.length,
   }
 })

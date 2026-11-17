@@ -23,9 +23,11 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 503, statusMessage: 'Database unavailable' })
   }
 
-  // LEFT JOIN on the NAME, not on an id: browse_items stores the term as
-  // text (that is the existing schema), so the join key is the string.
-  // COLLATE NOCASE matches how the terms are looked up everywhere else.
+  // Matched on the NAME, not on an id: browse_items stores its terms as
+  // text (that is the existing schema). The column holds a JSON list since
+  // migration 0023, so the term is looked for INSIDE it with json_each --
+  // an equality test would only ever match a product carrying that one tag
+  // and nothing else. COLLATE NOCASE matches the lookups everywhere else.
   const { results } = await db
     .prepare(`
       SELECT t.id, t.name, t.sort_order, COUNT(b.id) AS usage_count
@@ -34,8 +36,11 @@ export default defineEventHandler(async (event) => {
       -- their category in the same column, so without this a skin pack
       -- would count towards a build category of the same name.
       LEFT JOIN browse_items b
-        ON b.${taxonomy.itemColumn} = t.name COLLATE NOCASE
-        AND b.section = '${taxonomy.section}'
+        ON b.section = '${taxonomy.section}'
+        AND EXISTS (
+          SELECT 1 FROM json_each(b.${taxonomy.itemColumn}) je
+          WHERE je.value = t.name COLLATE NOCASE
+        )
       GROUP BY t.id, t.name, t.sort_order
       -- sort_order is the operator's drag order (migration 0017); name is
       -- only the tie-break, so two terms that somehow share a position still
@@ -50,15 +55,14 @@ export default defineEventHandler(async (event) => {
   // why a product shows a category the list does not contain.
   const { results: orphans } = await db
     .prepare(`
-      SELECT DISTINCT b.${taxonomy.itemColumn} AS name, COUNT(*) AS usage_count
-      FROM browse_items b
+      SELECT je.value AS name, COUNT(*) AS usage_count
+      FROM browse_items b, json_each(b.${taxonomy.itemColumn}) je
       WHERE b.section = '${taxonomy.section}'
-        AND b.${taxonomy.itemColumn} IS NOT NULL
-        AND b.${taxonomy.itemColumn} != ''
+        AND je.value != ''
         AND NOT EXISTS (
-          SELECT 1 FROM ${taxonomy.table} t WHERE t.name = b.${taxonomy.itemColumn} COLLATE NOCASE
+          SELECT 1 FROM ${taxonomy.table} t WHERE t.name = je.value COLLATE NOCASE
         )
-      GROUP BY b.${taxonomy.itemColumn}
+      GROUP BY je.value
       ORDER BY name COLLATE NOCASE ASC
     `)
     .all<{ name: string, usage_count: number }>()

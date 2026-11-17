@@ -129,8 +129,8 @@
                   <h3 class="text-white font-extrabold uppercase text-lg tracking-wide mb-3">{{ item.title }}</h3>
 
                   <div class="flex flex-wrap items-center gap-2 mb-3">
-                    <span class="px-2.5 py-1 rounded-full border border-primary/40 text-primary text-[11px] font-semibold uppercase tracking-wide">{{ item.build_type }}</span>
-                    <span class="px-2.5 py-1 rounded-full border border-white/20 text-text/70 text-[11px] font-semibold uppercase tracking-wide">{{ item.theme }}</span>
+                    <span v-for="t in item.build_type" :key="`bt-${t}`" class="px-2.5 py-1 rounded-full border border-primary/40 text-primary text-[11px] font-semibold uppercase tracking-wide">{{ t }}</span>
+                    <span v-for="t in item.theme" :key="`th-${t}`" class="px-2.5 py-1 rounded-full border border-white/20 text-text/70 text-[11px] font-semibold uppercase tracking-wide">{{ t }}</span>
                   </div>
 
                   <div class="flex items-center gap-2 mb-4">
@@ -209,6 +209,7 @@
 import { ref, computed, watch } from "vue";
 import { useRoute } from "#app";
 import { isValidHexColor } from "../../../server/utils/difficultyColors";
+import { matchesAnyTag } from "../../../server/utils/browseTags";
 
 interface BrowseItem {
   id: number
@@ -217,9 +218,11 @@ interface BrowseItem {
   image_url: string
   price: number
   difficulty: 'Easy' | 'Medium' | 'Hard' | 'Expert'
-  build_type: string
-  theme: string
-  category: string
+  // A build carries one or more of each; /api/browse-items parses the
+  // stored JSON lists so this page never sees the column's raw shape.
+  build_type: string[]
+  theme: string[]
+  category: string[]
   released: string
   description: string
   section: string
@@ -302,13 +305,13 @@ function orderedTerms(configured: string[] | undefined, used: Set<string>): stri
 }
 
 const buildTypes = computed(() =>
-  orderedTerms(taxonomies.value?.build_types, new Set(products.value.map(p => p.build_type)))
+  orderedTerms(taxonomies.value?.build_types, new Set(products.value.flatMap(p => p.build_type)))
 )
 const themes = computed(() =>
-  orderedTerms(taxonomies.value?.themes, new Set(products.value.map(p => p.theme)))
+  orderedTerms(taxonomies.value?.themes, new Set(products.value.flatMap(p => p.theme)))
 )
 const categories = computed(() =>
-  orderedTerms(taxonomies.value?.categories, new Set(products.value.map(p => p.category)))
+  orderedTerms(taxonomies.value?.categories, new Set(products.value.flatMap(p => p.category)))
 )
 
 const activeBuildTypes = ref<string[]>([]);
@@ -324,12 +327,15 @@ function toggleFilter(list: string[], value: string) {
   }
 }
 
+// A build matches a group of filters when ANY of its own terms is ticked --
+// ticking "Organic" and "Terrain" shows the builds that are either, the way
+// the filters already behaved when a build had exactly one term.
 const filteredProducts = computed(() =>
   products.value.filter(
     (p) =>
-      (activeBuildTypes.value.length === 0 || activeBuildTypes.value.includes(p.build_type)) &&
-      (activeThemes.value.length === 0 || activeThemes.value.includes(p.theme)) &&
-      (activeCategories.value.length === 0 || activeCategories.value.includes(p.category))
+      (activeBuildTypes.value.length === 0 || matchesAnyTag(p.build_type, activeBuildTypes.value)) &&
+      (activeThemes.value.length === 0 || matchesAnyTag(p.theme, activeThemes.value)) &&
+      (activeCategories.value.length === 0 || matchesAnyTag(p.category, activeCategories.value))
   )
 );
 

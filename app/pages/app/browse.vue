@@ -65,10 +65,18 @@
                 <div class="min-w-0">
                   <p class="font-semibold text-text truncate max-w-[220px]">{{ item.title }}</p>
                   <!-- A skinpack has no build type or theme, so its own
-                       category is the only tag worth showing. -->
+                       categories are the only tags worth showing. -->
                   <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                    <span class="px-2 py-0.5 rounded-full border border-primary/40 text-primary text-[10px] font-semibold uppercase tracking-wide">{{ item.section === 'skinpacks' ? item.category : item.build_type }}</span>
-                    <span v-if="item.section !== 'skinpacks'" class="px-2 py-0.5 rounded-full border border-white/20 text-text/70 text-[10px] font-semibold uppercase tracking-wide">{{ item.theme }}</span>
+                    <span
+                      v-for="t in (item.section === 'skinpacks' ? item.category : item.build_type)"
+                      :key="`primary-${t}`"
+                      class="px-2 py-0.5 rounded-full border border-primary/40 text-primary text-[10px] font-semibold uppercase tracking-wide"
+                    >{{ t }}</span>
+                    <span
+                      v-for="t in (item.section === 'skinpacks' ? [] : item.theme)"
+                      :key="`theme-${t}`"
+                      class="px-2 py-0.5 rounded-full border border-white/20 text-text/70 text-[10px] font-semibold uppercase tracking-wide"
+                    >{{ t }}</span>
                   </div>
                 </div>
               </div>
@@ -147,27 +155,30 @@
           <!-- Select only: no create-item. Terms are managed on /app/taxonomies,
                and the server now rejects one it does not know. Letting the
                form invent a term here is what filled the lists with typos. -->
-          <UFormField v-if="!isSkinpack" label="Build type">
+          <UFormField v-if="!isSkinpack" label="Build types">
             <USelectMenu
               v-model="form.build_type"
               :items="buildTypeChoices"
-              placeholder="Select a build type"
+              multiple
+              placeholder="Select one or more build types"
               class="w-full"
             />
           </UFormField>
-          <UFormField v-if="!isSkinpack" label="Theme">
+          <UFormField v-if="!isSkinpack" label="Themes">
             <USelectMenu
               v-model="form.theme"
               :items="themeChoices"
-              placeholder="Select a theme"
+              multiple
+              placeholder="Select one or more themes"
               class="w-full"
             />
           </UFormField>
-          <UFormField :label="isSkinpack ? 'Skinpack category' : 'Category'">
+          <UFormField :label="isSkinpack ? 'Skinpack categories' : 'Categories'">
             <USelectMenu
               v-model="form.category"
               :items="categoryChoices"
-              placeholder="Select a category"
+              multiple
+              placeholder="Select one or more categories"
               class="w-full"
             />
           </UFormField>
@@ -225,9 +236,10 @@ interface BrowseItem {
   image_url: string
   price: number
   difficulty: typeof DIFFICULTIES[number]
-  build_type: string
-  theme: string
-  category: string
+  // One or more of each; /api/browse-items parses the stored JSON lists.
+  build_type: string[]
+  theme: string[]
+  category: string[]
   released: string
   description: string
   section: string
@@ -286,12 +298,10 @@ async function saveDifficultyColor(level: typeof DIFFICULTIES[number]) {
 // product had no category, and would silently change it on the next save.
 const isSkinpack = computed(() => form.section === 'skinpacks')
 
-function withCurrent(options: string[] | null, current: string): string[] {
+function withCurrent(options: string[] | null, current: string[]): string[] {
   const list = options ?? []
-  if (current && !list.some(o => o.toLowerCase() === current.toLowerCase())) {
-    return [current, ...list]
-  }
-  return list
+  const missing = current.filter(c => c && !list.some(o => o.toLowerCase() === c.toLowerCase()))
+  return missing.length > 0 ? [...missing, ...list] : list
 }
 
 const buildTypeChoices = computed(() => withCurrent(buildTypeOptions.value, form.build_type))
@@ -316,9 +326,9 @@ const form = reactive({
   image_url: '',
   price: '',
   difficulty: 'Easy' as typeof DIFFICULTIES[number],
-  build_type: '',
-  theme: '',
-  category: '',
+  build_type: [] as string[],
+  theme: [] as string[],
+  category: [] as string[],
   released: '',
   description: '',
   download_key: null as string | null,
@@ -493,9 +503,9 @@ function startCreate() {
   form.image_url = ''
   form.price = ''
   form.difficulty = 'Easy'
-  form.build_type = ''
-  form.theme = ''
-  form.category = ''
+  form.build_type = []
+  form.theme = []
+  form.category = []
   form.released = ''
   form.description = ''
   form.download_key = null
@@ -517,9 +527,12 @@ function startEdit(item: BrowseItem) {
   // A skinpack stores no difficulty, so an item moved back to builds would
   // otherwise land on a blank select and a 400 from the server.
   form.difficulty = DIFFICULTIES.includes(item.difficulty) ? item.difficulty : 'Easy'
-  form.build_type = item.build_type
-  form.theme = item.theme
-  form.category = item.category
+  // Copied, not aliased: USelectMenu mutates the bound array, and binding
+  // the row's own would edit the fetched list in place -- the table would
+  // follow along before anything was saved, and Cancel would not undo it.
+  form.build_type = [...item.build_type]
+  form.theme = [...item.theme]
+  form.category = [...item.category]
   form.released = item.released
   form.description = item.description
   form.download_key = item.download_key
@@ -552,8 +565,8 @@ async function save() {
       image_url: form.image_url,
       price: isSkinpack.value ? 0 : Number(form.price),
       difficulty: isSkinpack.value ? 'Easy' : form.difficulty,
-      build_type: isSkinpack.value ? '' : form.build_type,
-      theme: isSkinpack.value ? '' : form.theme,
+      build_type: isSkinpack.value ? [] : form.build_type,
+      theme: isSkinpack.value ? [] : form.theme,
       category: form.category,
       released: form.released,
       description: form.description,

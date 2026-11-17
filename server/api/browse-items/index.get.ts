@@ -2,6 +2,7 @@
 import { verifySessionToken } from '../../utils/session'
 import { getSessionSecret } from '../../utils/env'
 import { ratingAverage } from '../../utils/rating'
+import { parseTags } from '../../utils/browseTags'
 
 interface BrowseItemRow {
   id: number
@@ -103,8 +104,15 @@ export default defineEventHandler(async (event) => {
     myRatingById = new Map(mine.map((row) => [row.browse_item_id, row.rating]))
   }
 
+  // build_type, theme and category are stored as JSON lists (migration
+  // 0023). They are parsed here, once, so every page that reads this
+  // endpoint -- the shop, the product page, the admin table -- gets arrays
+  // and none of them has to know how the column is written.
   return results.map(({ download_key, ...rest }) => ({
     ...rest,
+    build_type: parseTags(rest.build_type),
+    theme: parseTags(rest.theme),
+    category: parseTags(rest.category),
     has_download: !!download_key,
     like_count: countsById.get(rest.id) ?? 0,
     rating_count: ratingsById.get(rest.id)?.count ?? 0,

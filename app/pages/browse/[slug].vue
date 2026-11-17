@@ -51,9 +51,11 @@
             <div class="flex flex-wrap items-center gap-2 mb-5">
               <!-- Build type, theme and difficulty describe builds; a
                    skinpack carries none of them. -->
-              <span v-if="!isSkinpack" class="px-3 py-1 rounded-full border border-primary/40 text-primary text-xs font-semibold uppercase tracking-wide">{{ build.build_type }}</span>
-              <span v-if="!isSkinpack" class="px-3 py-1 rounded-full border border-white/20 text-text/70 text-xs font-semibold uppercase tracking-wide">{{ build.theme }}</span>
-              <span class="px-3 py-1 rounded-full border border-white/20 text-text/70 text-xs font-semibold uppercase tracking-wide">{{ build.category }}</span>
+              <template v-if="!isSkinpack">
+                <span v-for="t in build.build_type" :key="`bt-${t}`" class="px-3 py-1 rounded-full border border-primary/40 text-primary text-xs font-semibold uppercase tracking-wide">{{ t }}</span>
+                <span v-for="t in build.theme" :key="`th-${t}`" class="px-3 py-1 rounded-full border border-white/20 text-text/70 text-xs font-semibold uppercase tracking-wide">{{ t }}</span>
+              </template>
+              <span v-for="t in build.category" :key="`ct-${t}`" class="px-3 py-1 rounded-full border border-white/20 text-text/70 text-xs font-semibold uppercase tracking-wide">{{ t }}</span>
             </div>
 
             <p class="text-text/80 leading-relaxed mb-6">{{ build.description }}</p>
@@ -87,11 +89,11 @@
               </div>
               <div>
                 <dt class="text-text/40 text-xs uppercase tracking-widest font-bold mb-1">Category</dt>
-                <dd class="text-text font-semibold text-sm">{{ build.category }}</dd>
+                <dd class="text-text font-semibold text-sm">{{ build.category.join(', ') }}</dd>
               </div>
               <div v-if="!isSkinpack">
                 <dt class="text-text/40 text-xs uppercase tracking-widest font-bold mb-1">Theme</dt>
-                <dd class="text-text font-semibold text-sm">{{ build.theme }}</dd>
+                <dd class="text-text font-semibold text-sm">{{ build.theme.join(', ') }}</dd>
               </div>
             </dl>
 
@@ -217,6 +219,7 @@
 import { computed, ref } from "vue";
 import { useRoute } from "#app";
 import { isValidHexColor } from "../../../server/utils/difficultyColors";
+import { matchesAnyTag } from "../../../server/utils/browseTags";
 
 interface BrowseItem {
   id: number
@@ -225,9 +228,10 @@ interface BrowseItem {
   image_url: string
   price: number
   difficulty: 'Easy' | 'Medium' | 'Hard' | 'Expert'
-  build_type: string
-  theme: string
-  category: string
+  // One or more of each; /api/browse-items parses the stored JSON lists.
+  build_type: string[]
+  theme: string[]
+  category: string[]
   released: string
   description: string
   has_download: boolean
@@ -317,9 +321,11 @@ const relatedBuilds = computed(() => {
         // Never across catalogues: a skin pack is not a related build, and
         // a skinpack's empty theme would otherwise match anything.
         p.section === build.value!.section &&
-        (p.category === build.value!.category ||
-          p.theme === build.value!.theme ||
-          p.build_type === build.value!.build_type)
+        // One term in common is enough, as before -- it is just that either
+        // side may now carry several.
+        (matchesAnyTag(p.category, build.value!.category) ||
+          matchesAnyTag(p.theme, build.value!.theme) ||
+          matchesAnyTag(p.build_type, build.value!.build_type))
     )
     .slice(0, 4);
 });

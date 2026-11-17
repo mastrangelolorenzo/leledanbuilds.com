@@ -38,8 +38,20 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: 'Term not found.' })
   }
 
+  // The column holds a JSON list (migration 0023): the term has to be
+  // looked for inside it. An equality test would report "unused" for a term
+  // sitting next to another one, and deleting it would silently leave those
+  // products pointing at a term that no longer exists -- the exact outcome
+  // this guard is here to prevent.
   const inUse = await db
-    .prepare(`SELECT COUNT(*) AS n FROM browse_items WHERE section = '${taxonomy.section}' AND ${taxonomy.itemColumn} = ? COLLATE NOCASE`)
+    .prepare(`
+      SELECT COUNT(*) AS n FROM browse_items b
+      WHERE b.section = '${taxonomy.section}'
+        AND EXISTS (
+          SELECT 1 FROM json_each(b.${taxonomy.itemColumn}) je
+          WHERE je.value = ? COLLATE NOCASE
+        )
+    `)
     .bind(term.name)
     .first<{ n: number }>()
 
